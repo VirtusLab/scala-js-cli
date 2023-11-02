@@ -1,6 +1,6 @@
 import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version::0.4.0`
-import $ivy.`io.github.alexarchambault.mill::mill-native-image::0.1.25`
-import $ivy.`io.github.alexarchambault.mill::mill-native-image-upload:0.1.19`
+import $ivy.`io.github.alexarchambault.mill::mill-native-image::0.1.26`
+import $ivy.`io.github.alexarchambault.mill::mill-native-image-upload:0.1.26`
 import $ivy.`io.get-coursier::coursier-launcher:2.1.0-M2`
 
 import de.tobiasroeser.mill.vcs.version._
@@ -112,7 +112,7 @@ trait ScalaJsCliNativeImage extends ScalaModule with NativeImage {
   def graalVmVersion = "22.3.3"
   def nativeImageGraalVmJvmId = s"graalvm-java17:$graalVmVersion"
   def nativeImageName = "scala-js-ld"
-  def moduleDeps() = Seq(
+  def moduleDeps = Seq(
     cli
   )
   def compileIvyDeps = super.compileIvyDeps() ++ Seq(
@@ -353,7 +353,7 @@ object ci extends Module {
 
     val path = os.Path(directory, os.pwd)
     val launchers = os.list(path).filter(os.isFile(_)).map { path =>
-      path.toNIO -> path.last
+      path -> path.last
     }
     val ghToken = Option(System.getenv("UPLOAD_GH_TOKEN")).getOrElse {
       sys.error("UPLOAD_GH_TOKEN not set")
