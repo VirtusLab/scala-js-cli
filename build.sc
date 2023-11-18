@@ -224,7 +224,7 @@ trait ScalaJsCliPublishModule extends PublishModule {
     finalPublishVersion()
 }
 
-private def computePublishVersion(state: VcsState, simple: Boolean): String =
+def computePublishVersion(state: VcsState, simple: Boolean): String =
   if (state.commitsSinceLastTag > 0)
     if (simple) {
       val versionOrEmpty = state.lastTag
@@ -268,7 +268,7 @@ private def computePublishVersion(state: VcsState, simple: Boolean): String =
       .getOrElse(state.format())
       .stripPrefix("v")
 
-private def finalPublishVersion = {
+def finalPublishVersion = {
   val isCI = System.getenv("CI") != null
   if (isCI)
     T.persistent {
