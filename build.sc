@@ -29,19 +29,8 @@ trait Cli extends ScalaModule with ScalaJsCliPublishModule {
   )
   def mainClass = Some("org.scalajs.cli.Scalajsld")
 
-  def transitiveJars: T[Agg[PathRef]] = {
-
-    def allModuleDeps(todo: List[JavaModule]): List[JavaModule] = {
-      todo match {
-        case Nil => Nil
-        case h :: t =>
-          h :: allModuleDeps(h.moduleDeps.toList ::: t)
-      }
-    }
-
-    T {
-      mill.define.Target.traverse(allModuleDeps(this :: Nil).distinct)(m => T.task(m.jar()))()
-    }
+  def transitiveJars: T[Seq[PathRef]] = T {
+    T.traverse(transitiveModuleDeps)(_.jar)()
   }
 
   def jarClassPath = T {
@@ -112,7 +101,7 @@ trait ScalaJsCliNativeImage extends ScalaModule with NativeImage {
   def graalVmVersion = "22.3.3"
   def nativeImageGraalVmJvmId = s"graalvm-java17:$graalVmVersion"
   def nativeImageName = "scala-js-ld"
-  def moduleDeps() = Seq(
+  def moduleDeps = Seq(
     cli
   )
   def compileIvyDeps = super.compileIvyDeps() ++ Seq(
