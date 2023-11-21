@@ -29,19 +29,8 @@ trait Cli extends ScalaModule with ScalaJsCliPublishModule {
   )
   def mainClass = Some("org.scalajs.cli.Scalajsld")
 
-  def transitiveJars: T[Agg[PathRef]] = {
-
-    def allModuleDeps(todo: List[JavaModule]): List[JavaModule] = {
-      todo match {
-        case Nil => Nil
-        case h :: t =>
-          h :: allModuleDeps(h.moduleDeps.toList ::: t)
-      }
-    }
-
-    T {
-      mill.define.Target.traverse(allModuleDeps(this :: Nil).distinct)(m => T.task(m.jar()))()
-    }
+  def transitiveJars: T[Seq[PathRef]] = T {
+    T.traverse(transitiveModuleDeps)(_.jar)()
   }
 
   def jarClassPath = T {
@@ -112,7 +101,7 @@ trait ScalaJsCliNativeImage extends ScalaModule with NativeImage {
   def graalVmVersion = "22.3.3"
   def nativeImageGraalVmJvmId = s"graalvm-java17:$graalVmVersion"
   def nativeImageName = "scala-js-ld"
-  def moduleDeps() = Seq(
+  def moduleDeps = Seq(
     cli
   )
   def compileIvyDeps = super.compileIvyDeps() ++ Seq(
@@ -175,42 +164,42 @@ object `native-mostly-static` extends ScalaJsCliMostlyStaticNativeImage
 object tests extends ScalaModule {
   def scalaVersion = scala213
 
-  object test extends ScalaTests {
+  object test extends ScalaTests with TestModule.Munit {
     def ivyDeps = super.ivyDeps() ++ Seq(
       ivy"org.scalameta::munit:0.7.29",
       ivy"com.lihaoyi::os-lib:0.9.2",
       ivy"com.lihaoyi::pprint:0.8.1"
     )
-    def testFramework = "munit.Framework"
 
-    private final class TestHelper(
-      launcherTask: T[PathRef]
-    ) {
-      def test(args: String*) = {
-        val argsTask = T.task {
-          val launcher = launcherTask().path
-          val extraArgs = Seq(
-            s"-Dtest.scala-js-cli.path=$launcher",
-            s"-Dtest.scala-js-cli.scala-js-version=$scalaJsVersion"
-          )
-          args ++ extraArgs
-        }
-        T.command {
-          testTask(argsTask, T.task(Seq.empty[String]))()
-        }
+    def testHelper(
+      launcherTask: Task[PathRef],
+      args: Seq[String]
+    ): Task[(String, Seq[mill.testrunner.TestResult])] = {
+      val argsTask = T.task {
+        val launcher = launcherTask().path
+        val extraArgs = Seq(
+          s"-Dtest.scala-js-cli.path=$launcher",
+          s"-Dtest.scala-js-cli.scala-js-version=$scalaJsVersion"
+        )
+        args ++ extraArgs
       }
+      testTask(argsTask, T.task(Seq.empty[String]))
     }
 
-    def test(args: String*) =
-      jvm(args: _*)
-    def jvm(args: String*) =
-      new TestHelper(cli.standaloneLauncher).test(args: _*)
-    def native(args: String*) =
-      new TestHelper(native0.nativeImage).test(args: _*)
-    def nativeStatic(args: String*) =
-      new TestHelper(`native-static`.nativeImage).test(args: _*)
-    def nativeMostlyStatic(args: String*) =
-      new TestHelper(`native-mostly-static`.nativeImage).test(args: _*)
+    override def test(args: String*) = jvm(args: _*)
+
+    def jvm(args: String*): Command[(String, Seq[mill.testrunner.TestResult])] = T.command {
+      testHelper(cli.standaloneLauncher, args)
+    }
+    def native(args: String*) = T.command {
+      testHelper(native0.nativeImage, args)
+    }
+    def nativeStatic(args: String*) = T.command {
+      testHelper(`native-static`.nativeImage, args)
+    }
+    def nativeMostlyStatic(args: String*) = T.command {
+      testHelper(`native-mostly-static`.nativeImage, args)
+    }
   }
 }
 
@@ -235,7 +224,7 @@ trait ScalaJsCliPublishModule extends PublishModule {
     finalPublishVersion()
 }
 
-private def computePublishVersion(state: VcsState, simple: Boolean): String =
+def computePublishVersion(state: VcsState, simple: Boolean): String =
   if (state.commitsSinceLastTag > 0)
     if (simple) {
       val versionOrEmpty = state.lastTag
@@ -279,7 +268,7 @@ private def computePublishVersion(state: VcsState, simple: Boolean): String =
       .getOrElse(state.format())
       .stripPrefix("v")
 
-private def finalPublishVersion = {
+def finalPublishVersion = {
   val isCI = System.getenv("CI") != null
   if (isCI)
     T.persistent {
