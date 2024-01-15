@@ -98,7 +98,7 @@ trait ScalaJsCliNativeImage extends ScalaModule with NativeImage {
     )
   }
   def nativeImagePersist = System.getenv("CI") != null
-  def graalVmVersion = "22.3.3"
+  def graalVmVersion = "22.3.4"
   def nativeImageGraalVmJvmId = s"graalvm-java17:$graalVmVersion"
   def nativeImageName = "scala-js-ld"
   def moduleDeps = Seq(
