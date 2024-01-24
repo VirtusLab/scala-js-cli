@@ -235,17 +235,14 @@ class Tests extends munit.FunSuite {
         |
         |object Foo {
         |  def main(args: Array[String]): Unit = {
-        |     println(blas.dnrm2(3,Float64Array.from(js.Array(1.0, 2.0, 3.0)), 1))
+        |     println(linspace(-10.0, 10.0, 10))
         |  }
         |}
         |
         |@js.native
-        |@JSImport("@stdlib/blas/base", JSImport.Namespace)
-        |object blas extends BlasArrayOps
-        |
-        |@js.native
-        |trait BlasArrayOps extends js.Object{
-        |    def dnrm2(N: Int, x: Float64Array, strideX: Int): Double = js.native
+        |@JSImport("@stdlib/linspace", JSImport.Default)
+        |object linspace extends js.Object {
+        |  def apply(start: Double, stop: Double, num: Int): Float64Array = js.native
         |}
         |""".stripMargin
     )
@@ -307,11 +304,8 @@ class Tests extends munit.FunSuite {
     assert(failToParse.out.text().contains("com.github.plokhotnyuk.jsoniter_scala.core.JsonReaderException"))
 
     val importmap = dir / "importmap.json"
-    os.write(importmap, """{ "imports": {
-      "@stdlib/blas/base":"https://cdn.jsdelivr.net/gh/stdlib-js/blas@esm/index.mjs"}
-    }
-
-    """)
+    val substTo = "https://cdn.jsdelivr.net/gh/stdlib-js/array-base-linspace@esm/index.mjs"
+    os.write(importmap, s"""{ "imports": {"@stdlib/linspace":"$substTo"}}""")
 
     val out = os.makeDir.all(dir / "out")
 
@@ -334,7 +328,10 @@ class Tests extends munit.FunSuite {
       .call(cwd = dir, check = false, mergeErrIntoOut = true, stderr = os.Pipe)
     os.write( dir / "out" / "index.html", """<html><head><script type="module" src="main.js"></script></head><body></body></html>""")
 
-    println(worky.out.text())
-    println(dir)
+    // You can serve the HTML file here and check the console output of the index.html file, hosted in a simple webserver to prove the concept
+    //println(dir)
+    assert(os.exists(dir / "out" / "main.js"))
+    val rawJs = os.read.lines(dir / "out" / "main.js")
+    assert(rawJs(1).contains(substTo))
   }
 }
