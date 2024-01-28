@@ -28,7 +28,6 @@ import java.lang.NoClassDefFoundError
 import org.scalajs.cli.internal.{EsVersionParser, ModuleSplitStyleParser}
 import org.scalajs.cli.internal.ImportMapJsonIr.ImportMap
 
-import com.armanbilge.sjsimportmap.ImportMappedIRFile
 import com.github.plokhotnyuk.jsoniter_scala.core._
 import org.scalajs.cli.internal.ImportMapJsonIr
 
@@ -323,25 +322,7 @@ object Scalajsld {
 
           val irImportMappedFiles = options.importMap match {
             case None => irFiles
-            case Some(importMap) => {
-              val path = os.Path(options.importMap.getOrElse(throw new AssertionError("--importmap should be defined")))
-              val importMapJson = if(os.exists(path))(
-                readFromString[ImportMap](os.read(path))
-              ) else {
-                throw new AssertionError(s"importmap file at path ${path} does not exist.")
-              }
-              if (importMapJson.scopes.nonEmpty) {
-                throw new AssertionError("importmap scopes are not supported.")
-              }
-              val importsOnly : Map[String, String] = importMapJson.imports
-
-              irFiles.map{irFile =>
-                importsOnly.toSeq.foldLeft[IRFile](irFile){ case(irFile, (s1, s2)) =>
-                  val fct : (String => String) = (in => in.replace(s1, s2))
-                  ImportMappedIRFile.fromIRFile(irFile)(fct)
-                }
-              }
-            }
+            case Some(importMap) => ImportMapJsonIr.remapImports(importMap, irFiles)
           }
 
           (options.output, options.outputDir) match {
