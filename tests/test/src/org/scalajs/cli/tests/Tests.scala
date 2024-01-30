@@ -24,7 +24,7 @@ class Tests extends munit.FunSuite {
     .out
     .trim()
 
-  def getScalaJsCompilerPlugin(cwd: os.Path) = os.proc("cs", "fetch", "--intransitive", s"org.scala-js:scalajs-compiler_2.13.6:$scalaJsVersion")
+  def getScalaJsCompilerPlugin(cwd: os.Path) = os.proc("cs", "fetch", "--intransitive", s"org.scala-js:scalajs-compiler_2.13.12:$scalaJsVersion")
     .call(cwd = cwd).out.trim()
 
   test("tests") {
@@ -48,7 +48,7 @@ class Tests extends munit.FunSuite {
     os.proc(
       "cs",
       "launch",
-      "scalac:2.13.6",
+      "scalac:2.13.12",
       "--",
       "-classpath",
       scalaJsLibraryCp,
@@ -134,7 +134,7 @@ class Tests extends munit.FunSuite {
     os.proc(
       "cs",
       "launch",
-      "scalac:2.13.6",
+      "scalac:2.13.12",
       "--",
       "-classpath",
       scalaJsLibraryCp,
@@ -188,7 +188,7 @@ class Tests extends munit.FunSuite {
     os.proc(
       "cs",
       "launch",
-      "scalac:2.13.6",
+      "scalac:2.13.12",
       "--",
       "-classpath",
       scalaJsLibraryCp,
@@ -222,5 +222,116 @@ class Tests extends munit.FunSuite {
     assert(runRes.exitCode == 1)
 
     assert(runRes.err.trim().contains("UndefinedBehaviorError"))
+  }
+
+  test("import map") {
+    val dir = os.temp.dir()
+    os.write(
+      dir / "foo.scala",
+      """
+        |import scala.scalajs.js
+        |import scala.scalajs.js.annotation.JSImport
+        |import scala.scalajs.js.typedarray.Float64Array
+        |
+        |object Foo {
+        |  def main(args: Array[String]): Unit = {
+        |     println(linspace(-10.0, 10.0, 10))
+        |  }
+        |}
+        |
+        |@js.native
+        |@JSImport("@stdlib/linspace", JSImport.Default)
+        |object linspace extends js.Object {
+        |  def apply(start: Double, stop: Double, num: Int): Float64Array = js.native
+        |}
+        |""".stripMargin
+    )
+
+    val scalaJsLibraryCp = getScalaJsLibraryCp(dir)
+
+    os.makeDir.all(dir / "bin")
+    os.proc(
+      "cs",
+      "launch",
+      "scalac:2.13.12",
+      "--",
+      "-classpath",
+      scalaJsLibraryCp,
+      s"-Xplugin:${getScalaJsCompilerPlugin(dir)}",
+      "-d",
+      "bin",
+      "foo.scala"
+    ).call(cwd = dir, stdin = os.Inherit, stdout = os.Inherit)
+
+    val notThereYet = dir / "no-worky.json"
+    val launcherRes = os.proc(
+        launcher,
+        "--stdlib",
+        scalaJsLibraryCp,
+        "--fastOpt",
+        "-s",
+        "-o",
+        "test.js",
+        "-mm",
+        "Foo.main",
+        "bin",
+        "--importmap",
+        notThereYet
+      )
+      .call(cwd = dir, mergeErrIntoOut = true)
+
+    assert(launcherRes.exitCode == 0) // as far as I can tell launcher returns code 0 for failed validation?
+    assert(launcherRes.out.trim().contains(s"importmap file at path ${notThereYet} does not exist"))
+
+    os.write(notThereYet, "...")
+
+    val failToParse = os.proc(
+        launcher,
+        "--stdlib",
+        scalaJsLibraryCp,
+        "--fastOpt",
+        "-s",
+        "-o",
+        "test.js",
+        "-mm",
+        "Foo.main",
+        "bin",
+        "--importmap",
+        notThereYet
+      )
+      .call(cwd = dir, check = false, mergeErrIntoOut = true, stderr = os.Pipe)
+
+    assert(failToParse.out.text().contains("com.github.plokhotnyuk.jsoniter_scala.core.JsonReaderException"))
+
+    val importmap = dir / "importmap.json"
+    val substTo = "https://cdn.jsdelivr.net/gh/stdlib-js/array-base-linspace@esm/index.mjs"
+    os.write(importmap, s"""{ "imports": {"@stdlib/linspace":"$substTo"}}""")
+
+    val out = os.makeDir.all(dir / "out")
+
+    val worky = os.proc(
+        launcher,
+        "--stdlib",
+        scalaJsLibraryCp,
+        "--fastOpt",
+        "-s",
+        "--outputDir",
+        "out",
+        "-mm",
+        "Foo.main",
+        "bin",
+        "--moduleKind",
+        "ESModule",
+        "--importmap",
+        importmap
+      )
+      .call(cwd = dir, check = false, mergeErrIntoOut = true, stderr = os.Pipe)
+    os.write( dir / "out" / "index.html", """<html><head><script type="module" src="main.js"></script></head><body></body></html>""")
+
+    // You can serve the HTML file here and check the console output of the index.html file, hosted in a simple webserver to prove the concept
+    //println(dir)
+    assert(os.exists(dir / "out" / "main.js"))
+    val rawJs = os.read.lines(dir / "out" / "main.js")
+    assert(rawJs(1).contains(substTo))
   }
 }

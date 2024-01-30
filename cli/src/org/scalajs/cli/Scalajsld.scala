@@ -26,6 +26,10 @@ import java.net.URI
 import java.nio.file.Path
 import java.lang.NoClassDefFoundError
 import org.scalajs.cli.internal.{EsVersionParser, ModuleSplitStyleParser}
+import org.scalajs.cli.internal.ImportMapJsonIr.ImportMap
+
+import com.github.plokhotnyuk.jsoniter_scala.core._
+import org.scalajs.cli.internal.ImportMapJsonIr
 
 object Scalajsld {
 
@@ -48,7 +52,8 @@ object Scalajsld {
       checkIR: Boolean = false,
       stdLib: Seq[File] = Nil,
       jsHeader: String = "",
-      logLevel: Level = Level.Info
+      logLevel: Level = Level.Info,
+      importMap: Option[File] = None
   )
 
   private def moduleInitializer(
@@ -134,6 +139,12 @@ object Scalajsld {
         .valueName("<dir>")
         .action { (x, c) => c.copy(outputDir = Some(x)) }
         .text("Output directory of linker (required)")
+      opt[File]("importmap")
+        .valueName("<path/to/file>.json")
+        .action { (x, c) => c.copy(importMap = Some(x)) }
+        .text("""Absolute path to an existing json file, e.g. importmap.json the contents of which respect
+                | https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script/type/importmap#import_map_json_representation
+                | e.g. {"imports": {"square": "./module/shapes/square.js"},"scopes": {"/modules/customshapes/": {"square": "https://example.com/modules/shapes/square.js"}}}""")
       opt[Unit]('f', "fastOpt")
         .action { (_, c) =>
           c.copy(noOpt = false, fullOpt = false)
@@ -247,10 +258,26 @@ object Scalajsld {
           )
         }
 
-        if (c.outputDir.isDefined == c.output.isDefined)
+        val outputCheck = if (c.outputDir.isDefined == c.output.isDefined)
           failure("exactly one of --output or --outputDir have to be defined")
         else
           success
+
+        val importMapCheck = c.importMap match {
+          case None => success
+          case Some(value) => {
+            if (!value.exists()) {
+              failure(s"importmap file at path ${value} does not exist.")
+            } else {
+              success
+            }
+          }
+        }
+        val allValidations = Seq(outputCheck, importMapCheck)
+        allValidations.forall(_.isRight) match {
+          case true  => success
+          case false => failure(allValidations.filter(_.isLeft).map(_.left.get).mkString("\n\n"))
+        }
       }
 
       override def showUsageOnError = Some(true)
@@ -291,19 +318,25 @@ object Scalajsld {
       val result = PathIRContainer
         .fromClasspath(classpath)
         .flatMap(containers => cache.cached(containers._1))
-        .flatMap { irFiles =>
+        .flatMap { irFiles: Seq[IRFile] =>
+
+          val irImportMappedFiles = options.importMap match {
+            case None => irFiles
+            case Some(importMap) => ImportMapJsonIr.remapImports(importMap, irFiles)
+          }
+
           (options.output, options.outputDir) match {
             case (Some(jsFile), None) =>
               (DeprecatedLinkerAPI: DeprecatedLinkerAPI).link(
                 linker,
-                irFiles.toList,
+                irImportMappedFiles.toList,
                 moduleInitializers,
                 jsFile,
                 logger
               )
             case (None, Some(outputDir)) =>
               linker.link(
-                irFiles,
+                irImportMappedFiles,
                 moduleInitializers,
                 PathOutputDirectory(outputDir.toPath()),
                 logger
