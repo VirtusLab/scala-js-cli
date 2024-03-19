@@ -26,7 +26,7 @@ trait Cli extends ScalaModule with ScalaJsCliPublishModule {
   def ivyDeps = super.ivyDeps() ++ Seq(
     ivy"org.scala-js::scalajs-linker:$scalaJsVersion",
     ivy"com.github.scopt::scopt:4.1.0",
-    ivy"com.lihaoyi::os-lib:0.9.2",
+    ivy"com.lihaoyi::os-lib:0.9.3",
     ivy"com.github.plokhotnyuk.jsoniter-scala::jsoniter-scala-core:2.28.4", // This is the java8 version of jsoniter, according to scala-cli build
     ivy"com.github.plokhotnyuk.jsoniter-scala::jsoniter-scala-macros:2.28.4", // This is the java8 version of jsoniter, according to scala-cli build
     ivy"com.armanbilge::scalajs-importmap:0.1.1"
