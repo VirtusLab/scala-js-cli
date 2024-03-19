@@ -24,7 +24,7 @@ class Tests extends munit.FunSuite {
     .out
     .trim()
 
-  def getScalaJsCompilerPlugin(cwd: os.Path) = os.proc("cs", "fetch", "--intransitive", s"org.scala-js:scalajs-compiler_2.13.12:$scalaJsVersion")
+  def getScalaJsCompilerPlugin(cwd: os.Path) = os.proc("cs", "fetch", "--intransitive", s"org.scala-js:scalajs-compiler_2.13.13:$scalaJsVersion")
     .call(cwd = cwd).out.trim()
 
   test("tests") {
@@ -48,7 +48,7 @@ class Tests extends munit.FunSuite {
     os.proc(
       "cs",
       "launch",
-      "scalac:2.13.12",
+      "scalac:2.13.13",
       "--",
       "-classpath",
       scalaJsLibraryCp,
@@ -134,7 +134,7 @@ class Tests extends munit.FunSuite {
     os.proc(
       "cs",
       "launch",
-      "scalac:2.13.12",
+      "scalac:2.13.13",
       "--",
       "-classpath",
       scalaJsLibraryCp,
@@ -188,7 +188,7 @@ class Tests extends munit.FunSuite {
     os.proc(
       "cs",
       "launch",
-      "scalac:2.13.12",
+      "scalac:2.13.13",
       "--",
       "-classpath",
       scalaJsLibraryCp,
@@ -253,7 +253,7 @@ class Tests extends munit.FunSuite {
     os.proc(
       "cs",
       "launch",
-      "scalac:2.13.12",
+      "scalac:2.13.13",
       "--",
       "-classpath",
       scalaJsLibraryCp,
