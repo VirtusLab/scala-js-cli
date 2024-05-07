@@ -17,7 +17,7 @@ import scala.util.Properties.isWin
 
 
 def scalaJsCliVersion = "1.1.1-sc5"
-def scala213 = "2.13.13"
+def scala213 = "2.13.14"
 def scalaJsVersion = "1.16.0"
 object cli extends Cli
 trait Cli extends ScalaModule with ScalaJsCliPublishModule {
