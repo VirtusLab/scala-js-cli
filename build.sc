@@ -26,7 +26,7 @@ trait Cli extends ScalaModule with ScalaJsCliPublishModule {
   def ivyDeps = super.ivyDeps() ++ Seq(
     ivy"org.scala-js::scalajs-linker:$scalaJsVersion",
     ivy"com.github.scopt::scopt:4.1.0",
-    ivy"com.lihaoyi::os-lib:0.10.0",
+    ivy"com.lihaoyi::os-lib:0.10.1",
     ivy"com.github.plokhotnyuk.jsoniter-scala::jsoniter-scala-core:2.28.5", // This is the java8 version of jsoniter, according to scala-cli build
     ivy"com.github.plokhotnyuk.jsoniter-scala::jsoniter-scala-macros:2.28.5", // This is the java8 version of jsoniter, according to scala-cli build
     ivy"com.armanbilge::scalajs-importmap:0.1.1"
@@ -171,7 +171,7 @@ object tests extends ScalaModule {
   object test extends ScalaTests with TestModule.Munit {
     def ivyDeps = super.ivyDeps() ++ Seq(
       ivy"org.scalameta::munit:0.7.29",
-      ivy"com.lihaoyi::os-lib:0.10.0",
+      ivy"com.lihaoyi::os-lib:0.10.1",
       ivy"com.lihaoyi::pprint:0.9.0"
     )
 
