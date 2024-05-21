@@ -113,6 +113,112 @@ class Tests extends munit.FunSuite {
     assert(splitRunOutput == "asdf 2")
   }
 
+  test("longRunning") {
+    val dir = os.temp.dir()
+    def writePrintlnMain(stringToPrint: String) = {
+      os.write.over(
+        dir / "foo.scala",
+        s"""object Foo {
+          |  def main(args: Array[String]): Unit = {
+          |    println("$stringToPrint")
+          |  }
+          |}
+          |""".stripMargin
+      )
+    }
+
+    val scalaJsLibraryCp = getScalaJsLibraryCp(dir)
+
+    os.makeDir.all(dir / "bin")
+
+    def compile() = {
+      val compileCommand = os.proc(
+        "cs",
+        "launch",
+        "scalac:2.13.14",
+        "--",
+        "-classpath",
+        scalaJsLibraryCp,
+        s"-Xplugin:${getScalaJsCompilerPlugin(dir)}",
+        "-d",
+        "bin",
+        "foo.scala"
+      )
+      compileCommand.call(cwd = dir, stdin = os.Inherit, stdout = os.Inherit)
+    }
+
+    val command = os
+      .proc(
+        launcher,
+        "--stdlib",
+        scalaJsLibraryCp,
+        "-s",
+        "-o",
+        "test.js",
+        "-mm",
+        "Foo.main",
+        "--longRunning",
+        "bin",
+      )
+
+    writePrintlnMain("first version")
+    compile()
+    val process = command.spawn(cwd = dir)
+
+    def waitForLinkingToFinish() = {
+      while({
+        val line = process.stdout.readLine()
+        assert(line != null, "Got null from reading stdout")
+        line != "SCALA_JS_LINKING_DONE"
+      }) {}
+    }
+
+    try {
+      locally {
+        waitForLinkingToFinish()
+        val testJsSize = os.size(dir / "test.js")
+        val testJsMapSize = os.size(dir / "test.js.map")
+        assert(testJsSize > 0)
+        assert(testJsMapSize > 0)
+
+        val runRes = os.proc("node", "test.js").call(cwd = dir)
+        val runOutput = runRes.out.trim()
+        assert(runOutput == "first version")
+      }
+
+      writePrintlnMain("second version")
+      compile()
+
+      // trigger new linking
+      process.stdin.writeLine("")
+      process.stdin.flush()
+
+      waitForLinkingToFinish()
+
+      locally {
+        val testJsSize = os.size(dir / "test.js")
+        val testJsMapSize = os.size(dir / "test.js.map")
+        assert(testJsSize > 0)
+        assert(testJsMapSize > 0)
+
+        val runRes = os.proc("node", "test.js").call(cwd = dir)
+        val runOutput = runRes.out.trim()
+        assertEquals(runOutput, "second version")
+      }
+
+      // close stdin to allow the process to terminate gracefully
+      process.stdin.close()
+
+      // wait some time for the process to terminate
+      Thread.sleep(100)
+
+      assert(!process.isAlive(), "process did not terminate gracefully")
+    } finally {
+
+      process.close()
+    }
+  }
+
   test("fullLinkJs mode does not throw") {
     val dir = os.temp.dir()
     os.write(
