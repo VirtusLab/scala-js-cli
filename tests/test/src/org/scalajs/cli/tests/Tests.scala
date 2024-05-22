@@ -273,6 +273,64 @@ class Tests extends munit.FunSuite {
     os.proc("node", "test.js").call(cwd = dir, check = true)
   }
 
+
+  test("using fullLinkJS with ES modules succeeds") {
+    val dir = os.temp.dir()
+    os.write(
+      dir / "foo.scala",
+      """object Foo {
+        |  def main(args: Array[String]): Unit = {
+        |    val s = "Hello"
+        |    println("Hello" + s.charAt(5))
+        |  }
+        |
+        |  class A
+        |}
+        |""".stripMargin
+    )
+
+    val scalaJsLibraryCp = getScalaJsLibraryCp(dir)
+
+    os.makeDir.all(dir / "bin")
+    os.proc(
+      "cs",
+      "launch",
+      "scalac:2.13.14",
+      "--",
+      "-classpath",
+      scalaJsLibraryCp,
+      s"-Xplugin:${getScalaJsCompilerPlugin(dir)}",
+      "-d",
+      "bin",
+      "foo.scala"
+    ).call(cwd = dir, stdin = os.Inherit, stdout = os.Inherit)
+
+    val res = os
+      .proc(
+        launcher,
+        "--stdlib",
+        scalaJsLibraryCp,
+        "-s",
+        "--moduleKind",
+        "ESModule",
+        "--fullOpt",
+        "-o",
+        "test.js",
+        "-mm",
+        "Foo.main",
+        "bin"
+      )
+      .call(cwd = dir, mergeErrIntoOut = true)
+
+    val testJsSize = os.size(dir / "test.js")
+    val testJsMapSize = os.size(dir / "test.js.map")
+    assert(testJsSize > 0)
+    assert(testJsMapSize > 0)
+
+    os.proc("node", "test.js").call(cwd = dir, check = true)
+  }
+
+
   test("fastLinkJs mode throws") {
     val dir = os.temp.dir()
     os.write(
