@@ -294,10 +294,14 @@ object Scalajsld {
       val semantics =
         if (options.fullOpt) options.semantics.optimized
         else options.semantics
+
       val moduleSplitStyle = ModuleSplitStyleRead.moduleSplitStyleRead(
         options.moduleSplitStyle,
         options.smallModuleForPackages
       )
+
+      val useClosure = options.fullOpt && options.moduleKind != ModuleKind.ESModule
+
 
       val config = StandardConfig()
         .withSemantics(semantics)
@@ -310,10 +314,11 @@ object Scalajsld {
         .withParallel(true)
         .withSourceMap(options.sourceMap)
         .withRelativizeSourceMapBase(options.relativizeSourceMap)
-        .withClosureCompiler(options.fullOpt)
+        .withClosureCompiler(useClosure)
         .withPrettyPrint(options.prettyPrint)
         .withBatchMode(true)
         .withJSHeader(options.jsHeader)
+        .withMinify(options.fullOpt)
 
       val linker = StandardImpl.linker(config)
       val logger = new ScalaConsoleLogger(options.logLevel)
