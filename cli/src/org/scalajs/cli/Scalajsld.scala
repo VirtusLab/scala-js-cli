@@ -53,7 +53,8 @@ object Scalajsld {
       stdLib: Seq[File] = Nil,
       jsHeader: String = "",
       logLevel: Level = Level.Info,
-      importMap: Option[File] = None
+      importMap: Option[File] = None,
+      longRunning: Boolean = false
   )
 
   private def moduleInitializer(
@@ -234,6 +235,9 @@ object Scalajsld {
       opt[String]("jsHeader")
         .action { (jsHeader, c) => c.copy(jsHeader = jsHeader) }
         .text("A header that will be added at the top of generated .js files")
+      opt[Unit]("longRunning")
+        .action { (_, c) => c.copy(longRunning = true) }
+        .text("Run linking incrementally every time a line is printed to stdin")
       opt[Unit]('d', "debug")
         .action { (_, c) => c.copy(logLevel = Level.Debug) }
         .text("Debug mode: Show full log")
@@ -315,39 +319,53 @@ object Scalajsld {
       val logger = new ScalaConsoleLogger(options.logLevel)
       val cache = StandardImpl.irFileCache().newCache
 
-      val result = PathIRContainer
-        .fromClasspath(classpath)
-        .flatMap(containers => cache.cached(containers._1))
-        .flatMap { irFiles: Seq[IRFile] =>
+      val stdinLinesIterator = scala.io.Source.stdin.getLines()
 
-          val irImportMappedFiles = options.importMap match {
-            case None => irFiles
-            case Some(importMap) => ImportMapJsonIr.remapImports(importMap, irFiles)
-          }
+      while({
+        val result = PathIRContainer
+          .fromClasspath(classpath)
+          .flatMap(containers => cache.cached(containers._1))
+          .flatMap { irFiles: Seq[IRFile] =>
 
-          (options.output, options.outputDir) match {
-            case (Some(jsFile), None) =>
-              (DeprecatedLinkerAPI: DeprecatedLinkerAPI).link(
-                linker,
-                irImportMappedFiles.toList,
-                moduleInitializers,
-                jsFile,
-                logger
-              )
-            case (None, Some(outputDir)) =>
-              linker.link(
-                irImportMappedFiles,
-                moduleInitializers,
-                PathOutputDirectory(outputDir.toPath()),
-                logger
-              )
-            case _ =>
-              throw new AssertionError(
-                "Either output or outputDir have to be defined."
-              )
+            val irImportMappedFiles = options.importMap match {
+              case None => irFiles
+              case Some(importMap) => ImportMapJsonIr.remapImports(importMap, irFiles)
+            }
+
+            (options.output, options.outputDir) match {
+              case (Some(jsFile), None) =>
+                (DeprecatedLinkerAPI: DeprecatedLinkerAPI).link(
+                  linker,
+                  irImportMappedFiles.toList,
+                  moduleInitializers,
+                  jsFile,
+                  logger
+                )
+              case (None, Some(outputDir)) =>
+                linker.link(
+                  irImportMappedFiles,
+                  moduleInitializers,
+                  PathOutputDirectory(outputDir.toPath()),
+                  logger
+                )
+              case _ =>
+                throw new AssertionError(
+                  "Either output or outputDir have to be defined."
+                )
+            }
           }
-        }
-      Await.result(result, Duration.Inf)
+        Await.result(result, Duration.Inf)
+
+        if (options.longRunning) {
+          // print SCALA_JS_LINKING_DONE\n everytime one linking succeeds
+          println("SCALA_JS_LINKING_DONE")
+
+          if (stdinLinesIterator.hasNext) {
+            stdinLinesIterator.next()
+            true
+          } else false
+        } else false
+      }) {}
     }
   }
 
