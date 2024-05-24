@@ -170,7 +170,7 @@ object tests extends ScalaModule {
 
   object test extends ScalaTests with TestModule.Munit {
     def ivyDeps = super.ivyDeps() ++ Seq(
-      ivy"org.scalameta::munit:0.7.29",
+      ivy"org.scalameta::munit:1.0.0",
       ivy"com.lihaoyi::os-lib:0.10.1",
       ivy"com.lihaoyi::pprint:0.9.0"
     )
