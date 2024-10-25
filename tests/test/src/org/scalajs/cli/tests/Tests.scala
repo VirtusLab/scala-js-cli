@@ -498,4 +498,64 @@ class Tests extends munit.FunSuite {
     val rawJs = os.read.lines(dir / "out" / "main.js")
     assert(rawJs(1).contains(substTo))
   }
+
+
+  test("wasm flag emits wasm") {
+    val dir = os.temp.dir()
+    os.write(
+      dir / "foo.scala",
+      """object Foo {
+        |  def main(args: Array[String]): Unit = {
+        |    println("Hello")
+        |  }
+        |
+        |}
+        |""".stripMargin
+    )
+
+    val scalaJsLibraryCp = getScalaJsLibraryCp(dir)
+
+    os.makeDir.all(dir / "bin")
+    os.proc(
+      "cs",
+      "launch",
+      "scalac:2.13.15",
+      "--",
+      "-classpath",
+      scalaJsLibraryCp,
+      s"-Xplugin:${getScalaJsCompilerPlugin(dir)}",
+      "-d",
+      "bin",
+      "foo.scala"
+    ).call(cwd = dir, stdin = os.Inherit, stdout = os.Inherit)
+
+    os.makeDir.all(dir / "out")
+    val res = os
+      .proc(
+        launcher,
+        "--stdlib",
+        scalaJsLibraryCp,
+        "-s",
+        "--emitWasm",
+        "--moduleKind",
+        "ESModule",
+        "--moduleSplitStyle",
+        "FewestModules",
+        "--outputDir",
+        "out",
+        "-mm",
+        "Foo.main",
+        "bin"
+      )
+      .call(cwd = dir, mergeErrIntoOut = true)
+
+    os.walk(dir).foreach(println)
+    val testSize = os.size(dir / "out" / "main.wasm")
+    val testMapSize = os.size(dir / "out" / "main.wasm.map")
+    assert(testSize > 0)
+    assert(testMapSize > 0)
+
+    val res2 = os.proc("node", "--experimental-wasm-exnref", "main.js").call(cwd = dir / "out", check = true, stdin = os.Inherit, stdout = os.Inherit, stderr = os.Inherit)
+    println(res2.out)
+  }
 }

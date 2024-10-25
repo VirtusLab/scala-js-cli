@@ -54,7 +54,8 @@ object Scalajsld {
       jsHeader: String = "",
       logLevel: Level = Level.Info,
       importMap: Option[File] = None,
-      longRunning: Boolean = false
+      longRunning: Boolean = false,
+      emitWasm: Boolean = false
   )
 
   private def moduleInitializer(
@@ -238,6 +239,9 @@ object Scalajsld {
       opt[Unit]("longRunning")
         .action { (_, c) => c.copy(longRunning = true) }
         .text("Run linking incrementally every time a line is printed to stdin")
+      opt[Unit]("emitWasm")
+        .action { (_, c) => c.copy(emitWasm = true) }
+        .text("Run linking incrementally every time a line is printed to stdin")
       opt[Unit]('d', "debug")
         .action { (_, c) => c.copy(logLevel = Level.Debug) }
         .text("Debug mode: Show full log")
@@ -277,12 +281,31 @@ object Scalajsld {
             }
           }
         }
-        val allValidations = Seq(outputCheck, importMapCheck)
+
+        val wasEsModule = c.emitWasm match {
+          case true =>
+            if (c.moduleKind != ModuleKind.ESModule) {
+              failure("Wasm can only be emitted with module kind EsModule")
+            } else success
+          case false => success
+        }
+
+        val wasmFewestModules = c.emitWasm match {
+          case true => {
+            if (c.moduleSplitStyle != ModuleSplitStyle.FewestModules.toString) {
+              failure("Wasm can only be emitted with module split style FewestModules")
+            } else success
+          }
+          case false => success
+        }
+
+        val allValidations = Seq(outputCheck, importMapCheck, wasEsModule, wasmFewestModules)
         allValidations.forall(_.isRight) match {
           case true  => success
           case false => failure(allValidations.filter(_.isLeft).map(_.left.get).mkString("\n\n"))
         }
       }
+
 
       override def showUsageOnError = Some(true)
     }
@@ -319,6 +342,10 @@ object Scalajsld {
         .withBatchMode(true)
         .withJSHeader(options.jsHeader)
         .withMinify(options.fullOpt)
+        .withExperimentalUseWebAssembly(options.emitWasm)
+
+      println(options)
+      println(config)
 
       val linker = StandardImpl.linker(config)
       val logger = new ScalaConsoleLogger(options.logLevel)
@@ -347,6 +374,7 @@ object Scalajsld {
                   logger
                 )
               case (None, Some(outputDir)) =>
+                println(outputDir.toPath())
                 linker.link(
                   irImportMappedFiles,
                   moduleInitializers,
