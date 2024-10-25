@@ -241,7 +241,7 @@ object Scalajsld {
         .text("Run linking incrementally every time a line is printed to stdin")
       opt[Unit]("emitWasm")
         .action { (_, c) => c.copy(emitWasm = true) }
-        .text("Run linking incrementally every time a line is printed to stdin")
+        .text("If present, use the _experimental_ web assembly backend in the linker")
       opt[Unit]('d', "debug")
         .action { (_, c) => c.copy(logLevel = Level.Debug) }
         .text("Debug mode: Show full log")
