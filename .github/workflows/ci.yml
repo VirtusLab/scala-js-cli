@@ -63,6 +63,9 @@ jobs:
       - uses: coursier/setup-action@v1.2.0-M3
         with:
           jvm: temurin:17
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
       - run: |
           ./mill -i "native.writeNativeImageScript" generate.sh "" && \
           ./generate.sh && \
@@ -101,6 +104,9 @@ jobs:
       - uses: coursier/setup-action@v1.2.0-M3
         with:
           jvm: temurin:17
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
       - run: |
           ./mill -i "native-static.writeNativeImageScript" generate.sh "" && \
           ./generate.sh && \
@@ -131,6 +137,9 @@ jobs:
       - uses: coursier/setup-action@v1.2.0-M3
         with:
           jvm: temurin:17
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
       - run: |
           ./mill -i "native-mostly-static.writeNativeImageScript" generate.sh "" && \
           ./generate.sh && \
