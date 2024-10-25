@@ -20,7 +20,7 @@ jobs:
       - uses: VirtusLab/scala-cli-setup@9bc68588ab2d49dae03e5395a5f411e20914f97e
         with:
           jvm: "temurin:17"
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - name: Test CLI
