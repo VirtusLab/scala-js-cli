@@ -555,7 +555,7 @@ class Tests extends munit.FunSuite {
     assert(testSize > 0)
     assert(testMapSize > 0)
 
-    val res2 = os.proc("node", "--experimental-wasm-exnref", "main.js").call(cwd = dir / "out", check = true, stdin = os.Inherit, stdout = os.Inherit, stderr = os.Inherit)
-    println(res2.out)
+    os.proc("node", "--experimental-wasm-exnref", "main.js").call(cwd = dir / "out", check = true, stdin = os.Inherit, stdout = os.Inherit, stderr = os.Inherit)
+
   }
 }

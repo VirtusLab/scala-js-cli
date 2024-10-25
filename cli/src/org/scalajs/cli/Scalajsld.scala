@@ -344,9 +344,6 @@ object Scalajsld {
         .withMinify(options.fullOpt)
         .withExperimentalUseWebAssembly(options.emitWasm)
 
-      println(options)
-      println(config)
-
       val linker = StandardImpl.linker(config)
       val logger = new ScalaConsoleLogger(options.logLevel)
       val cache = StandardImpl.irFileCache().newCache
@@ -374,7 +371,7 @@ object Scalajsld {
                   logger
                 )
               case (None, Some(outputDir)) =>
-                println(outputDir.toPath())
+
                 linker.link(
                   irImportMappedFiles,
                   moduleInitializers,
