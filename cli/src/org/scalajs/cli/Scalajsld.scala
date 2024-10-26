@@ -282,24 +282,7 @@ object Scalajsld {
           }
         }
 
-        val wasEsModule = c.emitWasm match {
-          case true =>
-            if (c.moduleKind != ModuleKind.ESModule) {
-              failure("Wasm can only be emitted with module kind EsModule")
-            } else success
-          case false => success
-        }
-
-        val wasmFewestModules = c.emitWasm match {
-          case true => {
-            if (c.moduleSplitStyle != ModuleSplitStyle.FewestModules.toString) {
-              failure("Wasm can only be emitted with module split style FewestModules")
-            } else success
-          }
-          case false => success
-        }
-
-        val allValidations = Seq(outputCheck, importMapCheck, wasEsModule, wasmFewestModules)
+        val allValidations = Seq(outputCheck, importMapCheck)
         allValidations.forall(_.isRight) match {
           case true  => success
           case false => failure(allValidations.filter(_.isLeft).map(_.left.get).mkString("\n\n"))
