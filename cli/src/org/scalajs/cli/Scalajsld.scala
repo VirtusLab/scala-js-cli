@@ -54,7 +54,8 @@ object Scalajsld {
       jsHeader: String = "",
       logLevel: Level = Level.Info,
       importMap: Option[File] = None,
-      longRunning: Boolean = false
+      longRunning: Boolean = false,
+      emitWasm: Boolean = false
   )
 
   private def moduleInitializer(
@@ -238,6 +239,9 @@ object Scalajsld {
       opt[Unit]("longRunning")
         .action { (_, c) => c.copy(longRunning = true) }
         .text("Run linking incrementally every time a line is printed to stdin")
+      opt[Unit]("emitWasm")
+        .action { (_, c) => c.copy(emitWasm = true) }
+        .text("If present, use the _experimental_ web assembly backend in the linker")
       opt[Unit]('d', "debug")
         .action { (_, c) => c.copy(logLevel = Level.Debug) }
         .text("Debug mode: Show full log")
@@ -277,12 +281,14 @@ object Scalajsld {
             }
           }
         }
+
         val allValidations = Seq(outputCheck, importMapCheck)
         allValidations.forall(_.isRight) match {
           case true  => success
           case false => failure(allValidations.filter(_.isLeft).map(_.left.get).mkString("\n\n"))
         }
       }
+
 
       override def showUsageOnError = Some(true)
     }
@@ -319,6 +325,7 @@ object Scalajsld {
         .withBatchMode(true)
         .withJSHeader(options.jsHeader)
         .withMinify(options.fullOpt)
+        .withExperimentalUseWebAssembly(options.emitWasm)
 
       val linker = StandardImpl.linker(config)
       val logger = new ScalaConsoleLogger(options.logLevel)
@@ -347,6 +354,7 @@ object Scalajsld {
                   logger
                 )
               case (None, Some(outputDir)) =>
+
                 linker.link(
                   irImportMappedFiles,
                   moduleInitializers,
