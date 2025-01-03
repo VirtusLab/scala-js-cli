@@ -27,8 +27,8 @@ trait Cli extends ScalaModule with ScalaJsCliPublishModule {
     ivy"org.scala-js::scalajs-linker:$scalaJsVersion",
     ivy"com.github.scopt::scopt:4.1.0",
     ivy"com.lihaoyi::os-lib:0.11.3",
-    ivy"com.github.plokhotnyuk.jsoniter-scala::jsoniter-scala-core:2.32.0", // This is the java8 version of jsoniter, according to scala-cli build
-    ivy"com.github.plokhotnyuk.jsoniter-scala::jsoniter-scala-macros:2.32.0", // This is the java8 version of jsoniter, according to scala-cli build
+    ivy"com.github.plokhotnyuk.jsoniter-scala::jsoniter-scala-core:2.33.0", // This is the java8 version of jsoniter, according to scala-cli build
+    ivy"com.github.plokhotnyuk.jsoniter-scala::jsoniter-scala-macros:2.33.0", // This is the java8 version of jsoniter, according to scala-cli build
     ivy"com.armanbilge::scalajs-importmap:0.1.1"
   )
   def mainClass = Some("org.scalajs.cli.Scalajsld")
