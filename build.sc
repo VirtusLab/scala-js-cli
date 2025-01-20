@@ -17,7 +17,7 @@ import scala.util.Properties.isWin
 
 
 def scalaJsCliVersion = "1.1.1-sc5"
-def scala213 = "2.13.15"
+def scala213 = "2.13.16"
 def scalaJsVersion = "1.18.1"
 object cli extends Cli
 trait Cli extends ScalaModule with ScalaJsCliPublishModule {
@@ -170,7 +170,7 @@ object tests extends ScalaModule {
 
   object test extends ScalaTests with TestModule.Munit {
     def ivyDeps = super.ivyDeps() ++ Seq(
-      ivy"org.scalameta::munit:1.0.3",
+      ivy"org.scalameta::munit:1.0.4",
       ivy"com.lihaoyi::os-lib:0.11.3",
       ivy"com.lihaoyi::pprint:0.9.0"
     )
