@@ -8,15 +8,10 @@ import io.github.alexarchambault.millnativeimage.NativeImage
 import io.github.alexarchambault.millnativeimage.upload.Upload
 import mill._
 import mill.scalalib._
-import coursier.core.Version
-
-import java.io.File
 
 import scala.concurrent.duration._
 import scala.util.Properties.isWin
 
-
-def scalaJsCliVersion = "1.1.1-sc5"
 def scala213 = "2.13.16"
 def scalaJsVersion = "1.18.1"
 object cli extends Cli
