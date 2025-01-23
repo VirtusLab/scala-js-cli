@@ -12,19 +12,29 @@ import mill.scalalib._
 import scala.concurrent.duration._
 import scala.util.Properties.isWin
 
-def scala213 = "2.13.16"
-def scalaJsVersion = "1.18.2"
+object Versions {
+  def scala213 = "2.13.16"
+  def scalaJsVersion = "1.18.2"
+  def jsoniterVersion = "2.33.0"
+  def scalaJsImportMapVersion = "0.1.1"
+  def graalVmVersion = "22.3.1"
+  def munitVersion = "1.1.0"
+  def osLibVersion = "0.11.3"
+  def pprintVersion = "0.9.0"
+  def coursierVersion = "2.1.24"
+  def scoptVersion = "4.1.0"
+}
 object cli extends Cli
 trait Cli extends ScalaModule with ScalaJsCliPublishModule {
-  def scalaVersion = scala213
+  def scalaVersion = Versions.scala213
   def artifactName = "scalajs" + super.artifactName()
   def ivyDeps = super.ivyDeps() ++ Seq(
-    ivy"org.scala-js::scalajs-linker:$scalaJsVersion",
-    ivy"com.github.scopt::scopt:4.1.0",
-    ivy"com.lihaoyi::os-lib:0.11.3",
-    ivy"com.github.plokhotnyuk.jsoniter-scala::jsoniter-scala-core:2.33.0", // This is the java8 version of jsoniter, according to scala-cli build
-    ivy"com.github.plokhotnyuk.jsoniter-scala::jsoniter-scala-macros:2.33.0", // This is the java8 version of jsoniter, according to scala-cli build
-    ivy"com.armanbilge::scalajs-importmap:0.1.1"
+    ivy"org.scala-js::scalajs-linker:${Versions.scalaJsVersion}",
+    ivy"com.github.scopt::scopt:${Versions.scoptVersion}",
+    ivy"com.lihaoyi::os-lib:${Versions.osLibVersion}",
+    ivy"com.github.plokhotnyuk.jsoniter-scala::jsoniter-scala-core:${Versions.jsoniterVersion}", // This is the java8 version of jsoniter, according to scala-cli build
+    ivy"com.github.plokhotnyuk.jsoniter-scala::jsoniter-scala-macros:${Versions.jsoniterVersion}", // This is the java8 version of jsoniter, according to scala-cli build
+    ivy"com.armanbilge::scalajs-importmap:${Versions.scalaJsImportMapVersion}"
   )
   def mainClass = Some("org.scalajs.cli.Scalajsld")
 
@@ -83,7 +93,7 @@ trait Cli extends ScalaModule with ScalaJsCliPublishModule {
 }
 
 trait ScalaJsCliNativeImage extends ScalaModule with NativeImage {
-  def scalaVersion = scala213
+  def scalaVersion = Versions.scala213
 
   def nativeImageClassPath = T{
     runClasspath()
@@ -97,7 +107,7 @@ trait ScalaJsCliNativeImage extends ScalaModule with NativeImage {
     )
   }
   def nativeImagePersist = System.getenv("CI") != null
-  def graalVmVersion = "22.3.1"
+  def graalVmVersion = Versions.graalVmVersion
   def nativeImageGraalVmJvmId = s"graalvm-java17:$graalVmVersion"
   def nativeImageName = "scala-js-ld"
   def moduleDeps = Seq(
@@ -124,7 +134,7 @@ object native extends ScalaJsCliNativeImage
 
 def native0 = native
 
-def csVersion = "2.1.24"
+def csVersion = Versions.coursierVersion
 
 trait ScalaJsCliStaticNativeImage extends ScalaJsCliNativeImage {
   def nameSuffix = "-static"
@@ -161,13 +171,13 @@ trait ScalaJsCliMostlyStaticNativeImage extends ScalaJsCliNativeImage {
 object `native-mostly-static` extends ScalaJsCliMostlyStaticNativeImage
 
 object tests extends ScalaModule {
-  def scalaVersion = scala213
+  def scalaVersion = Versions.scala213
 
   object test extends ScalaTests with TestModule.Munit {
     def ivyDeps = super.ivyDeps() ++ Seq(
-      ivy"org.scalameta::munit:1.1.0",
-      ivy"com.lihaoyi::os-lib:0.11.3",
-      ivy"com.lihaoyi::pprint:0.9.0"
+      ivy"org.scalameta::munit:${Versions.munitVersion}",
+      ivy"com.lihaoyi::os-lib:${Versions.osLibVersion}",
+      ivy"com.lihaoyi::pprint:${Versions.pprintVersion}"
     )
 
     def testHelper(
@@ -178,7 +188,7 @@ object tests extends ScalaModule {
         val launcher = launcherTask().path
         val extraArgs = Seq(
           s"-Dtest.scala-js-cli.path=$launcher",
-          s"-Dtest.scala-js-cli.scala-js-version=$scalaJsVersion"
+          s"-Dtest.scala-js-cli.scala-js-version=${Versions.scalaJsVersion}"
         )
         args ++ extraArgs
       }
@@ -351,8 +361,8 @@ object ci extends Module {
       else ("v" + version, false)
 
     Upload.upload(ghOrg, ghName, ghToken, tag, dryRun = false, overwrite = overwriteAssets)(launchers: _*)
-    if(version != scalaJsVersion && !version.endsWith("-SNAPSHOT")) // when we release `0.13.0.1` we should also update native launchers in tag `0.13.0`
-      Upload.upload(ghOrg, ghName, ghToken, s"v$scalaJsVersion", dryRun = false, overwrite = true)(launchers: _*)
+    if(version != Versions.scalaJsVersion && !version.endsWith("-SNAPSHOT")) // when we release `0.13.0.1` we should also update native launchers in tag `0.13.0`
+      Upload.upload(ghOrg, ghName, ghToken, s"v${Versions.scalaJsVersion}", dryRun = false, overwrite = true)(launchers: _*)
   }
 }
 
