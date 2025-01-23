@@ -1,7 +1,7 @@
 import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version::0.4.1`
 import $ivy.`io.github.alexarchambault.mill::mill-native-image::0.1.29`
 import $ivy.`io.github.alexarchambault.mill::mill-native-image-upload:0.1.29`
-import $ivy.`io.get-coursier::coursier-launcher:2.1.9`
+import $ivy.`io.get-coursier::coursier-launcher:2.1.24`
 
 import de.tobiasroeser.mill.vcs.version._
 import io.github.alexarchambault.millnativeimage.NativeImage
@@ -129,7 +129,7 @@ object native extends ScalaJsCliNativeImage
 
 def native0 = native
 
-def csDockerVersion = "2.1.9"
+def csVersion = "2.1.24"
 
 trait ScalaJsCliStaticNativeImage extends ScalaJsCliNativeImage {
   def nameSuffix = "-static"
@@ -143,7 +143,7 @@ trait ScalaJsCliStaticNativeImage extends ScalaJsCliNativeImage {
     Some(
       NativeImage.linuxStaticParams(
         "scala-cli-base-musl:latest",
-        s"https://github.com/coursier/coursier/releases/download/v$csDockerVersion/cs-x86_64-pc-linux.gz"
+        s"https://github.com/coursier/coursier/releases/download/v$csVersion/cs-x86_64-pc-linux.gz"
       )
     )
   }
@@ -159,7 +159,7 @@ trait ScalaJsCliMostlyStaticNativeImage extends ScalaJsCliNativeImage {
   def nativeImageDockerParams = Some(
     NativeImage.linuxMostlyStaticParams(
       "ubuntu:18.04", // TODO Pin that?
-      s"https://github.com/coursier/coursier/releases/download/v$csDockerVersion/cs-x86_64-pc-linux.gz"
+      s"https://github.com/coursier/coursier/releases/download/v$csVersion/cs-x86_64-pc-linux.gz"
     )
   )
 }
