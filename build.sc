@@ -13,7 +13,7 @@ import scala.concurrent.duration._
 import scala.util.Properties.isWin
 
 def scala213 = "2.13.16"
-def scalaJsVersion = "1.18.1"
+def scalaJsVersion = "1.18.2"
 object cli extends Cli
 trait Cli extends ScalaModule with ScalaJsCliPublishModule {
   def scalaVersion = scala213
