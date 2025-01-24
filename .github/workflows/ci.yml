@@ -13,11 +13,11 @@ jobs:
     strategy:
       fail-fast: false
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: true
-      - uses: VirtusLab/scala-cli-setup@9bc68588ab2d49dae03e5395a5f411e20914f97e
+      - uses: VirtusLab/scala-cli-setup@v1
         with:
           jvm: "temurin:17"
       - uses: actions/setup-node@v4
@@ -31,11 +31,11 @@ jobs:
     runs-on: ubuntu-20.04
     if: github.event_name == 'push'
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: true
-      - uses: VirtusLab/scala-cli-setup@9bc68588ab2d49dae03e5395a5f411e20914f97e
+      - uses: VirtusLab/scala-cli-setup@v1
         with:
           jvm: "temurin:17"
       - run: .github/scripts/gpg-setup.sh
@@ -53,14 +53,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-20.04, windows-latest, macos-latest]
+        os: [ubuntu-20.04, windows-latest, macos-latest, macos-13]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: true
       - uses: coursier/cache-action@v6.4
-      - uses: coursier/setup-action@v1.2.0-M3
+      - uses: coursier/setup-action@v1
         with:
           jvm: temurin:17
       - uses: actions/setup-node@v4
@@ -79,7 +79,7 @@ jobs:
           @call ./mill.bat -i "native.copyToArtifacts" artifacts/
         shell: cmd
         if: runner.os == 'Windows'
-      - uses: actions/upload-artifact@v3.1.2
+      - uses: actions/upload-artifact@v4
         with:
           name: launcher-${{ matrix.os }}
           path: artifacts/
@@ -96,12 +96,12 @@ jobs:
     strategy:
       fail-fast: false
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: true
       - uses: coursier/cache-action@v6.4
-      - uses: coursier/setup-action@v1.2.0-M3
+      - uses: coursier/setup-action@v1
         with:
           jvm: temurin:17
       - uses: actions/setup-node@v4
@@ -112,7 +112,7 @@ jobs:
           ./generate.sh && \
           ./mill -i "tests.test.nativeStatic" && \
           ./mill -i "native-static.copyToArtifacts" artifacts/
-      - uses: actions/upload-artifact@v3.1.2
+      - uses: actions/upload-artifact@v4
         with:
           name: launcher-${{ matrix.os }}-static
           path: artifacts/
@@ -129,12 +129,12 @@ jobs:
     strategy:
       fail-fast: false
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: true
       - uses: coursier/cache-action@v6.4
-      - uses: coursier/setup-action@v1.2.0-M3
+      - uses: coursier/setup-action@v1
         with:
           jvm: temurin:17
       - uses: actions/setup-node@v4
@@ -145,7 +145,7 @@ jobs:
           ./generate.sh && \
           ./mill -i "tests.test.nativeStatic" && \
           ./mill -i "native-mostly-static.copyToArtifacts" artifacts/
-      - uses: actions/upload-artifact@v3.1.2
+      - uses: actions/upload-artifact@v4
         with:
           name: launcher-${{ matrix.os }}-mostly-static
           path: artifacts/
