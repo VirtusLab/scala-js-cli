@@ -15,7 +15,7 @@ import scala.util.Properties.isWin
 object Versions {
   def scala213 = "2.13.16"
   def scalaJsVersion = "1.18.2"
-  def jsoniterVersion = "2.33.2"
+  def jsoniterVersion = "2.33.3"
   def scalaJsImportMapVersion = "0.1.1"
   def graalVmVersion = "22.3.1"
   def munitVersion = "1.1.0"
