@@ -17,7 +17,7 @@ object Versions {
   def scalaJsVersion = "1.18.2"
   def jsoniterVersion = "2.33.3"
   def scalaJsImportMapVersion = "0.1.1"
-  def graalVmVersion = "22.3.1"
+  def graalVmVersion = "22.3.5"
   def munitVersion = "1.1.0"
   def osLibVersion = "0.11.4"
   def pprintVersion = "0.9.0"
