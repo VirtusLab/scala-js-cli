@@ -7,6 +7,7 @@ import de.tobiasroeser.mill.vcs.version._
 import io.github.alexarchambault.millnativeimage.NativeImage
 import io.github.alexarchambault.millnativeimage.upload.Upload
 import mill._
+import mill.define.Task
 import mill.scalalib._
 import mill.testrunner.TestResult
 import org.jgrapht.graph.DefaultGraphType.simple
@@ -185,38 +186,28 @@ object tests extends ScalaModule {
       ivy"com.lihaoyi::pprint:${Versions.pprintVersion}"
     )
 
-    private def testHelper(
-      launcherTask: Task[PathRef],
-      args: Seq[String]
-    ): Task[(String, Seq[TestResult])] = {
-      val argsTask = Task.Anon {
-        val launcher = launcherTask().path
-        val extraArgs = Seq(
-          s"-Dtest.scala-js-cli.path=$launcher",
-          s"-Dtest.scala-js-cli.scala-js-version=${Versions.scalaJsVersion}"
-        )
-        args ++ extraArgs
-      }
-      testTask(argsTask, Task.Anon(Seq.empty[String]))
-    }
-
     override def test(args: String*): Command[(String, Seq[TestResult])] = jvm(args: _*)
 
+    private def testExtraArgs(launcher: os.Path): Seq[String] = Seq(
+      s"-Dtest.scala-js-cli.path=${launcher}",
+      s"-Dtest.scala-js-cli.scala-js-version=${Versions.scalaJsVersion}"
+    )
+
     @unused
-    def jvm(args: String*): Command[(String, Seq[TestResult])] = T.command {
-      testHelper(cli.standaloneLauncher, args)
+    def jvm(args: String*): Command[(String, Seq[TestResult])] = Task.Command {
+      testTask(Task.Anon { args ++ testExtraArgs(cli.standaloneLauncher().path) }, Task.Anon(Seq.empty[String]))()
     }
     @unused
-    def native(args: String*): Command[(String, Seq[TestResult])] = T.command {
-      testHelper(native0.nativeImage, args)
+    def native(args: String*): Command[(String, Seq[TestResult])] = Task.Command {
+      testTask(Task.Anon { args ++ testExtraArgs(native0.nativeImage().path) }, Task.Anon(Seq.empty[String]))()
     }
     @unused
-    def nativeStatic(args: String*): Command[(String, Seq[TestResult])] = T.command {
-      testHelper(`native-static`.nativeImage, args)
+    def nativeStatic(args: String*): Command[(String, Seq[TestResult])] = Task.Command {
+      testTask(Task.Anon { args ++ testExtraArgs(`native-static`.nativeImage().path) }, Task.Anon(Seq.empty[String]))()
     }
     @unused
-    def nativeMostlyStatic(args: String*): Command[(String, Seq[TestResult])] = T.command {
-      testHelper(`native-mostly-static`.nativeImage, args)
+    def nativeMostlyStatic(args: String*): Command[(String, Seq[TestResult])] = Task.Command {
+      testTask(Task.Anon { args ++ testExtraArgs(`native-mostly-static`.nativeImage().path) }, Task.Anon(Seq.empty[String]))()
     }
   }
 }
