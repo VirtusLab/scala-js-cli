@@ -26,6 +26,7 @@ object Versions {
   def pprintVersion = "0.9.0"
   def coursierVersion = "2.1.24"
   def scoptVersion = "4.1.0"
+  def ubuntuVersion = "24.04"
 }
 object cli extends Cli
 trait Cli extends ScalaModule with ScalaJsCliPublishModule {
@@ -165,7 +166,7 @@ trait ScalaJsCliMostlyStaticNativeImage extends ScalaJsCliNativeImage {
   def nameSuffix = "-mostly-static"
   def nativeImageDockerParams: Target[Option[NativeImage.DockerParams]] = Some(
     NativeImage.linuxMostlyStaticParams(
-      "ubuntu:18.04", // TODO Pin that?
+      s"ubuntu:${Versions.ubuntuVersion}",
       s"https://github.com/coursier/coursier/releases/download/v$csVersion/cs-x86_64-pc-linux.gz"
     )
   )
