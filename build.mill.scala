@@ -17,7 +17,7 @@ import scala.concurrent.duration._
 import scala.util.Properties.isWin
 
 object Versions {
-  def scala213 = "2.13.16"
+  def scala3 = "3.3.6"
   def scalaJsVersion = "1.19.0"
   def jsoniterVersion = "2.35.3"
   def scalaJsImportMapVersion = "0.1.1"
@@ -31,15 +31,15 @@ object Versions {
 }
 object cli extends Cli
 trait Cli extends ScalaModule with ScalaJsCliPublishModule {
-  def scalaVersion: Target[String] = Versions.scala213
+  def scalaVersion: Target[String] = Versions.scala3
   def artifactName: Target[String] = "scalajs" + super.artifactName()
   def ivyDeps: Target[Agg[Dep]] = super.ivyDeps() ++ Seq(
-    ivy"org.scala-js::scalajs-linker:${Versions.scalaJsVersion}",
+    ivy"org.scala-js:scalajs-linker_2.13:${Versions.scalaJsVersion}",
     ivy"com.github.scopt::scopt:${Versions.scoptVersion}",
     ivy"com.lihaoyi::os-lib:${Versions.osLibVersion}",
     ivy"com.github.plokhotnyuk.jsoniter-scala::jsoniter-scala-core:${Versions.jsoniterVersion}", // This is the java8 version of jsoniter, according to scala-cli build
     ivy"com.github.plokhotnyuk.jsoniter-scala::jsoniter-scala-macros:${Versions.jsoniterVersion}", // This is the java8 version of jsoniter, according to scala-cli build
-    ivy"com.armanbilge::scalajs-importmap:${Versions.scalaJsImportMapVersion}"
+    ivy"com.armanbilge:scalajs-importmap_2.13:${Versions.scalaJsImportMapVersion}"
   )
   def mainClass: Target[Option[String]] = Some("org.scalajs.cli.Scalajsld")
 
@@ -98,7 +98,7 @@ trait Cli extends ScalaModule with ScalaJsCliPublishModule {
 }
 
 trait ScalaJsCliNativeImage extends ScalaModule with NativeImage {
-  def scalaVersion: Target[String] = Versions.scala213
+  def scalaVersion: Target[String] = Versions.scala3
 
   def nativeImageClassPath: Target[Seq[PathRef]] = Task {
     runClasspath()
@@ -176,7 +176,7 @@ object `native-mostly-static` extends ScalaJsCliMostlyStaticNativeImage
 
 @unused
 object tests extends ScalaModule {
-  def scalaVersion: Target[String] = Versions.scala213
+  def scalaVersion: Target[String] = Versions.scala3
 
   @unused
   object test extends ScalaTests with TestModule.Munit {

@@ -337,7 +337,7 @@ object Scalajsld {
         val result = PathIRContainer
           .fromClasspath(classpath)
           .flatMap(containers => cache.cached(containers._1))
-          .flatMap { irFiles: Seq[IRFile] =>
+          .flatMap { (irFiles: Seq[IRFile]) =>
 
             val irImportMappedFiles = options.importMap match {
               case None => irFiles
