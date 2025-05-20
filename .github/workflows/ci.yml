@@ -41,7 +41,7 @@ jobs:
       - run: .github/scripts/gpg-setup.sh
         env:
           PGP_SECRET: ${{ secrets.PUBLISH_SECRET_KEY }}
-      - run: ./mill -i ci.publishSonatype __.publishArtifacts
+      - run: ./mill -i ci.publishSonatype --tasks __.publishArtifacts
         env:
           PGP_PASSPHRASE: ${{ secrets.PUBLISH_SECRET_KEY_PASSWORD }}
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
@@ -67,16 +67,16 @@ jobs:
         with:
           node-version: '22'
       - run: |
-          ./mill -i "native.writeNativeImageScript" generate.sh "" && \
+          ./mill -i "native.writeNativeImageScript" --scriptDest generate.sh --imageDest "" && \
           ./generate.sh && \
           ./mill -i "tests.test.native" && \
-          ./mill -i "native.copyToArtifacts" artifacts/
+          ./mill -i "native.copyToArtifacts" --directory artifacts/
         if: runner.os != 'Windows'
       - run: |
-          @call ./mill.bat -i "native.writeNativeImageScript" generate.bat ""
+          @call ./mill.bat -i "native.writeNativeImageScript" --scriptDest generate.bat --imageDest ""
           @call generate.bat
           @call ./mill.bat -i "tests.test.native"
-          @call ./mill.bat -i "native.copyToArtifacts" artifacts/
+          @call ./mill.bat -i "native.copyToArtifacts" --directory artifacts/
         shell: cmd
         if: runner.os == 'Windows'
       - uses: actions/upload-artifact@v4
@@ -108,17 +108,17 @@ jobs:
         with:
           node-version: '22'
       - run: |
-          ./mill -i "native-static.writeNativeImageScript" generate.sh "" && \
+          ./mill -i "native-static.writeNativeImageScript" --scriptDest generate.sh --imageDest "" && \
           ./generate.sh && \
           ./mill -i "tests.test.nativeStatic" && \
-          ./mill -i "native-static.copyToArtifacts" artifacts/
+          ./mill -i "native-static.copyToArtifacts" --directory artifacts/
       - uses: actions/upload-artifact@v4
         with:
           name: launcher-${{ matrix.os }}-static
           path: artifacts/
           if-no-files-found: error
           retention-days: 1
-      - run: ./mill -i ci.upload artifacts/
+      - run: ./mill -i ci.upload --directory artifacts/
         if: github.event_name == 'push'
         env:
           UPLOAD_GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -141,17 +141,17 @@ jobs:
         with:
           node-version: '22'
       - run: |
-          ./mill -i "native-mostly-static.writeNativeImageScript" generate.sh "" && \
+          ./mill -i "native-mostly-static.writeNativeImageScript" --scriptDest generate.sh --imageDest "" && \
           ./generate.sh && \
           ./mill -i "tests.test.nativeStatic" && \
-          ./mill -i "native-mostly-static.copyToArtifacts" artifacts/
+          ./mill -i "native-mostly-static.copyToArtifacts" --directory artifacts/
       - uses: actions/upload-artifact@v4
         with:
           name: launcher-${{ matrix.os }}-mostly-static
           path: artifacts/
           if-no-files-found: error
           retention-days: 1
-      - run: ./mill -i ci.upload artifacts/
+      - run: ./mill -i ci.upload --directory artifacts/
         if: github.event_name == 'push'
         env:
           UPLOAD_GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
