@@ -370,7 +370,7 @@ object ci extends Module {
   def upload(directory: String = "artifacts/"): Command[Unit] = Task.Command {
     val version = finalPublishVersion()
 
-    val path = os.Path(directory, os.pwd)
+    val path = os.Path(directory, Task.workspace)
     val launchers = os.list(path).filter(os.isFile(_)).map { path =>
       path -> path.last
     }
