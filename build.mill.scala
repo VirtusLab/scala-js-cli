@@ -2,6 +2,7 @@ import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version::0.4.1`
 import $ivy.`io.github.alexarchambault.mill::mill-native-image::0.1.31-1`
 import $ivy.`io.github.alexarchambault.mill::mill-native-image-upload:0.1.31-1`
 import $ivy.`io.get-coursier::coursier-launcher:2.1.24`
+import $ivy.`com.goyeau::mill-scalafix::0.5.1`
 import build_.package_.native0
 import de.tobiasroeser.mill.vcs.version._
 import io.github.alexarchambault.millnativeimage.NativeImage
@@ -15,23 +16,28 @@ import org.jgrapht.graph.DefaultGraphType.simple
 import scala.annotation.unused
 import scala.concurrent.duration._
 import scala.util.Properties.isWin
+import com.goyeau.mill.scalafix.ScalafixModule
 
 object Versions {
-  def scala213 = "2.13.16"
-  def scalaJsVersion = "1.19.0"
-  def jsoniterVersion = "2.35.3"
+  def scala213                = "2.13.16"
+  def scalaJsVersion          = "1.19.0"
+  def jsoniterVersion         = "2.35.3"
   def scalaJsImportMapVersion = "0.1.1"
-  def graalVmVersion = "22.3.1"
-  def munitVersion = "1.1.1"
-  def osLibVersion = "0.11.4"
-  def pprintVersion = "0.9.0"
-  def coursierVersion = "2.1.24"
-  def scoptVersion = "4.1.0"
-  def ubuntuVersion = "24.04"
+  def graalVmVersion          = "22.3.1"
+  def munitVersion            = "1.1.1"
+  def osLibVersion            = "0.11.4"
+  def pprintVersion           = "0.9.0"
+  def coursierVersion         = "2.1.24"
+  def scoptVersion            = "4.1.0"
+  def ubuntuVersion           = "24.04"
 }
+trait ScalaJsCliModule extends ScalaModule with ScalafixModule {
+  override def scalacOptions: Target[Seq[String]] = super.scalacOptions.map(_ ++ Seq("-Wunused"))
+  def scalaVersion: Target[String]                = Versions.scala213
+}
+
 object cli extends Cli
-trait Cli extends ScalaModule with ScalaJsCliPublishModule {
-  def scalaVersion: Target[String] = Versions.scala213
+trait Cli extends ScalaJsCliModule with ScalaJsCliPublishModule {
   def artifactName: Target[String] = "scalajs" + super.artifactName()
   def ivyDeps: Target[Agg[Dep]] = super.ivyDeps() ++ Seq(
     ivy"org.scala-js::scalajs-linker:${Versions.scalaJsVersion}",
@@ -58,7 +64,7 @@ trait Cli extends ScalaModule with ScalaJsCliPublishModule {
     def urlOf(path: os.Path): Option[String] =
       if (path.startsWith(cachePath)) {
         val segments = path.relativeTo(cachePath).segments
-        val url = segments.head + "://" + segments.tail.mkString("/")
+        val url      = segments.head + "://" + segments.tail.mkString("/")
         Some(url)
       }
       else None
@@ -69,7 +75,7 @@ trait Cli extends ScalaModule with ScalaJsCliPublishModule {
       Parameters,
       Preamble
     }
-    val cp = jarClassPath().map(_.path)
+    val cp         = jarClassPath().map(_.path)
     val mainClass0 = mainClass().getOrElse(sys.error("No main class"))
 
     val dest = Task.ctx().dest / (if (isWin) "launcher.bat" else "launcher")
@@ -81,7 +87,7 @@ trait Cli extends ScalaModule with ScalaJsCliPublishModule {
       urlOf(path) match {
         case None =>
           val content = os.read.bytes(path)
-          val name = path.last
+          val name    = path.last
           ClassPathEntry.Resource(name, os.mtime(path), content)
         case Some(url) => ClassPathEntry.Url(url)
       }
@@ -97,8 +103,7 @@ trait Cli extends ScalaModule with ScalaJsCliPublishModule {
   }
 }
 
-trait ScalaJsCliNativeImage extends ScalaModule with NativeImage {
-  def scalaVersion: Target[String] = Versions.scala213
+trait ScalaJsCliNativeImage extends ScalaJsCliModule with NativeImage {
 
   def nativeImageClassPath: Target[Seq[PathRef]] = Task {
     runClasspath()
@@ -108,14 +113,14 @@ trait ScalaJsCliNativeImage extends ScalaModule with NativeImage {
       "--no-fallback",
       "-H:IncludeResources=org/scalajs/linker/backend/emitter/.*.sjsir",
       "-H:IncludeResources=com/google/javascript/jscomp/js/polyfills.txt",
-      "-H:IncludeResourceBundles=com.google.javascript.jscomp.parsing.ParserConfig",
+      "-H:IncludeResourceBundles=com.google.javascript.jscomp.parsing.ParserConfig"
     )
   }
-  def nativeImagePersist: Boolean = System.getenv("CI") != null
-  def graalVmVersion: String = Versions.graalVmVersion
+  def nativeImagePersist: Boolean             = System.getenv("CI") != null
+  def graalVmVersion: String                  = Versions.graalVmVersion
   def nativeImageGraalVmJvmId: Target[String] = s"graalvm-java17:$graalVmVersion"
-  def nativeImageName: Target[String] = "scala-js-ld"
-  def moduleDeps: Seq[JavaModule] = Seq(cli)
+  def nativeImageName: Target[String]         = "scala-js-ld"
+  def moduleDeps: Seq[JavaModule]             = Seq(cli)
   def compileIvyDeps: Target[Agg[Dep]] =
     super.compileIvyDeps() ++ Seq(ivy"org.graalvm.nativeimage:svm:$graalVmVersion")
   def nativeImageMainClass: Target[String] = "org.scalajs.cli.Scalajsld"
@@ -156,10 +161,11 @@ trait ScalaJsCliStaticNativeImage extends ScalaJsCliNativeImage {
       )
     )
   }
-  def writeNativeImageScript(scriptDest: String, imageDest: String = ""): Command[Unit] = Task.Command {
-    buildHelperImage()
-    super.writeNativeImageScript(scriptDest, imageDest)()
-  }
+  def writeNativeImageScript(scriptDest: String, imageDest: String = ""): Command[Unit] =
+    Task.Command {
+      buildHelperImage()
+      super.writeNativeImageScript(scriptDest, imageDest)()
+    }
 }
 object `native-static` extends ScalaJsCliStaticNativeImage
 
@@ -175,8 +181,7 @@ trait ScalaJsCliMostlyStaticNativeImage extends ScalaJsCliNativeImage {
 object `native-mostly-static` extends ScalaJsCliMostlyStaticNativeImage
 
 @unused
-object tests extends ScalaModule {
-  def scalaVersion: Target[String] = Versions.scala213
+object tests extends ScalaJsCliModule {
 
   @unused
   object test extends ScalaTests with TestModule.Munit {
@@ -189,30 +194,42 @@ object tests extends ScalaModule {
     override def test(args: String*): Command[(String, Seq[TestResult])] = jvm(args: _*)
 
     private def testExtraArgs(launcher: os.Path): Seq[String] = Seq(
-      s"-Dtest.scala-js-cli.path=${launcher}",
+      s"-Dtest.scala-js-cli.path=$launcher",
       s"-Dtest.scala-js-cli.scala-js-version=${Versions.scalaJsVersion}"
     )
 
     @unused
     def jvm(args: String*): Command[(String, Seq[TestResult])] = Task.Command {
-      testTask(Task.Anon { args ++ testExtraArgs(cli.standaloneLauncher().path) }, Task.Anon(Seq.empty[String]))()
+      testTask(
+        Task.Anon(args ++ testExtraArgs(cli.standaloneLauncher().path)),
+        Task.Anon(Seq.empty[String])
+      )()
     }
     @unused
     def native(args: String*): Command[(String, Seq[TestResult])] = Task.Command {
-      testTask(Task.Anon { args ++ testExtraArgs(native0.nativeImage().path) }, Task.Anon(Seq.empty[String]))()
+      testTask(
+        Task.Anon(args ++ testExtraArgs(native0.nativeImage().path)),
+        Task.Anon(Seq.empty[String])
+      )()
     }
     @unused
     def nativeStatic(args: String*): Command[(String, Seq[TestResult])] = Task.Command {
-      testTask(Task.Anon { args ++ testExtraArgs(`native-static`.nativeImage().path) }, Task.Anon(Seq.empty[String]))()
+      testTask(
+        Task.Anon(args ++ testExtraArgs(`native-static`.nativeImage().path)),
+        Task.Anon(Seq.empty[String])
+      )()
     }
     @unused
     def nativeMostlyStatic(args: String*): Command[(String, Seq[TestResult])] = Task.Command {
-      testTask(Task.Anon { args ++ testExtraArgs(`native-mostly-static`.nativeImage().path) }, Task.Anon(Seq.empty[String]))()
+      testTask(
+        Task.Anon(args ++ testExtraArgs(`native-mostly-static`.nativeImage().path)),
+        Task.Anon(Seq.empty[String])
+      )()
     }
   }
 }
 
-def ghOrg = "virtuslab"
+def ghOrg  = "virtuslab"
 def ghName = "scala-js-cli"
 trait ScalaJsCliPublishModule extends PublishModule {
   import mill.scalalib.publish._
@@ -226,7 +243,7 @@ trait ScalaJsCliPublishModule extends PublishModule {
       Developer("alexarchambault", "Alex Archambault", "https://github.com/alexarchambault"),
       Developer("sjrd", "Sébastien Doeraene", "https://github.com/sjrd"),
       Developer("gzm0", "Tobias Schlatter", "https://github.com/gzm0"),
-      Developer("nicolasstucki", "Nicolas Stucki", "https://github.com/nicolasstucki"),
+      Developer("nicolasstucki", "Nicolas Stucki", "https://github.com/nicolasstucki")
     )
   )
   def publishVersion: Target[String] = finalPublishVersion()
@@ -247,7 +264,8 @@ def computePublishVersion(state: VcsState, simple: Boolean): String =
               Some(tag.take(idx + 1) + (tag.drop(idx + 1).toInt + 1).toString + "-SNAPSHOT")
             else
               None
-          } else {
+          }
+          else {
             val idx = tag.indexOf("-")
             if (idx >= 0) Some(tag.take(idx) + "+" + tag.drop(idx + 1) + "-SNAPSHOT")
             else None
@@ -257,7 +275,8 @@ def computePublishVersion(state: VcsState, simple: Boolean): String =
       Some(versionOrEmpty)
         .filter(_.nonEmpty)
         .getOrElse(state.format())
-    } else {
+    }
+    else {
       val rawVersion = os
         .proc("git", "describe", "--tags")
         .call()
@@ -292,21 +311,22 @@ def finalPublishVersion: Target[String] = {
 
 object ci extends Module {
   @unused
-  def publishSonatype(tasks: mill.main.Tasks[PublishModule.PublishData]): Command[Unit] = Task.Command {
-    publishSonatype0(
-      data = define.Target.sequence(tasks.value)(),
-      log = Task.ctx().log
-    )
-  }
+  def publishSonatype(tasks: mill.main.Tasks[PublishModule.PublishData]): Command[Unit] =
+    Task.Command {
+      publishSonatype0(
+        data = define.Target.sequence(tasks.value)(),
+        log = Task.ctx().log
+      )
+    }
 
   private def publishSonatype0(
-      data: Seq[PublishModule.PublishData],
-      log: mill.api.Logger
+    data: Seq[PublishModule.PublishData],
+    log: mill.api.Logger
   ): Unit = {
 
     val credentials = sys.env("SONATYPE_USERNAME") + ":" + sys.env("SONATYPE_PASSWORD")
     val pgpPassword = sys.env("PGP_PASSPHRASE")
-    val timeout = 10.minutes
+    val timeout     = 10.minutes
 
     val artifacts = data.map { case PublishModule.PublishData(a, s) =>
       (s.map { case (p, f) => (p.path, f) }, a)
@@ -314,7 +334,7 @@ object ci extends Module {
 
     val isRelease = {
       val versions = artifacts.map(_._2.version).toSet
-      val set = versions.map(!_.endsWith("-SNAPSHOT"))
+      val set      = versions.map(!_.endsWith("-SNAPSHOT"))
       assert(
         set.size == 1,
         s"Found both snapshot and non-snapshot versions: ${versions.toVector.sorted.mkString(", ")}"
@@ -330,8 +350,10 @@ object ci extends Module {
         "--detach-sign",
         "--batch=true",
         "--yes",
-        "--pinentry-mode", "loopback",
-        "--passphrase", pgpPassword,
+        "--pinentry-mode",
+        "loopback",
+        "--passphrase",
+        pgpPassword,
         "--armor",
         "--use-agent"
       ),
@@ -359,8 +381,24 @@ object ci extends Module {
       if (version.endsWith("-SNAPSHOT")) ("launchers", true)
       else ("v" + version, false)
 
-    Upload.upload(ghOrg, ghName, ghToken, tag, dryRun = false, overwrite = overwriteAssets)(launchers: _*)
-    if(version != Versions.scalaJsVersion && !version.endsWith("-SNAPSHOT")) // when we release `0.13.0.1` we should also update native launchers in tag `0.13.0`
-      Upload.upload(ghOrg, ghName, ghToken, s"v${Versions.scalaJsVersion}", dryRun = false, overwrite = true)(launchers: _*)
+    Upload.upload(
+      ghOrg,
+      ghName,
+      ghToken,
+      tag,
+      dryRun = false,
+      overwrite = overwriteAssets
+    )(launchers: _*)
+    if (
+      version != Versions.scalaJsVersion && !version.endsWith("-SNAPSHOT")
+    ) // when we release `0.13.0.1` we should also update native launchers in tag `0.13.0`
+      Upload.upload(
+        ghOrg,
+        ghName,
+        ghToken,
+        s"v${Versions.scalaJsVersion}",
+        dryRun = false,
+        overwrite = true
+      )(launchers: _*)
   }
 }

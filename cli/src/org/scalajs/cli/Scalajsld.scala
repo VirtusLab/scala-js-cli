@@ -7,65 +7,57 @@
 \*                                                                                     */
 
 package org.scalajs.cli
-
+import org.scalajs.cli.internal.{EsVersionParser, ImportMapJsonIr, ModuleSplitStyleParser}
 import org.scalajs.ir.ScalaJSVersions
-
+import org.scalajs.linker._
+import org.scalajs.linker.interface.CheckedBehavior.Compliant
+import org.scalajs.linker.interface._
 import org.scalajs.logging._
 
-import org.scalajs.linker._
-import org.scalajs.linker.interface._
-
-import CheckedBehavior.Compliant
-
-import scala.concurrent.{Await, Future}
-import scala.concurrent.duration.Duration
-import scala.concurrent.ExecutionContext.Implicits.global
-
 import java.io.File
+import java.lang.NoClassDefFoundError
 import java.net.URI
 import java.nio.file.Path
-import java.lang.NoClassDefFoundError
-import org.scalajs.cli.internal.{EsVersionParser, ModuleSplitStyleParser}
-import org.scalajs.cli.internal.ImportMapJsonIr.ImportMap
 
-import com.github.plokhotnyuk.jsoniter_scala.core._
-import org.scalajs.cli.internal.ImportMapJsonIr
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
 
 object Scalajsld {
 
   private case class Options(
-      cp: Seq[File] = Seq.empty,
-      moduleInitializers: Seq[ModuleInitializer] = Seq.empty,
-      output: Option[File] = None,
-      outputDir: Option[File] = None,
-      semantics: Semantics = Semantics.Defaults,
-      esFeatures: ESFeatures = ESFeatures.Defaults,
-      moduleKind: ModuleKind = ModuleKind.NoModule,
-      moduleSplitStyle: String = ModuleSplitStyle.FewestModules.toString,
-      smallModuleForPackages: Seq[String] = Seq.empty,
-      outputPatterns: OutputPatterns = OutputPatterns.Defaults,
-      noOpt: Boolean = false,
-      fullOpt: Boolean = false,
-      prettyPrint: Boolean = false,
-      sourceMap: Boolean = false,
-      relativizeSourceMap: Option[URI] = None,
-      checkIR: Boolean = false,
-      stdLib: Seq[File] = Nil,
-      jsHeader: String = "",
-      logLevel: Level = Level.Info,
-      importMap: Option[File] = None,
-      longRunning: Boolean = false,
-      emitWasm: Boolean = false
+    cp: Seq[File] = Seq.empty,
+    moduleInitializers: Seq[ModuleInitializer] = Seq.empty,
+    output: Option[File] = None,
+    outputDir: Option[File] = None,
+    semantics: Semantics = Semantics.Defaults,
+    esFeatures: ESFeatures = ESFeatures.Defaults,
+    moduleKind: ModuleKind = ModuleKind.NoModule,
+    moduleSplitStyle: String = ModuleSplitStyle.FewestModules.toString,
+    smallModuleForPackages: Seq[String] = Seq.empty,
+    outputPatterns: OutputPatterns = OutputPatterns.Defaults,
+    noOpt: Boolean = false,
+    fullOpt: Boolean = false,
+    prettyPrint: Boolean = false,
+    sourceMap: Boolean = false,
+    relativizeSourceMap: Option[URI] = None,
+    checkIR: Boolean = false,
+    stdLib: Seq[File] = Nil,
+    jsHeader: String = "",
+    logLevel: Level = Level.Info,
+    importMap: Option[File] = None,
+    longRunning: Boolean = false,
+    emitWasm: Boolean = false
   )
 
   private def moduleInitializer(
-      s: String,
-      hasArgs: Boolean
+    s: String,
+    hasArgs: Boolean
   ): ModuleInitializer = {
     val lastDot = s.lastIndexOf('.')
     if (lastDot < 0)
       throw new IllegalArgumentException(s"$s is not a valid main method")
-    val className = s.substring(0, lastDot)
+    val className      = s.substring(0, lastDot)
     val mainMethodName = s.substring(lastDot + 1)
     if (hasArgs)
       ModuleInitializer.mainMethodWithArgs(className, mainMethodName)
@@ -92,14 +84,15 @@ object Scalajsld {
     )
 
     def moduleSplitStyleRead(
-        splitStyle: String,
-        modulePackages: Seq[String]
+      splitStyle: String,
+      modulePackages: Seq[String]
     ): ModuleSplitStyle =
       try {
         (new ModuleSplitStyleParser)
           .parse(splitStyle, modulePackages.toArray)
           .underlying
-      } catch {
+      }
+      catch {
         case e: NoClassDefFoundError =>
           throw new IllegalArgumentException(
             s"$splitStyle is not a valid module split style",
@@ -113,7 +106,7 @@ object Scalajsld {
       head("scalajsld", ScalaJSVersions.current)
       arg[File]("<value> ...")
         .unbounded()
-        .action { (x, c) => c.copy(cp = c.cp :+ x) }
+        .action((x, c) => c.copy(cp = c.cp :+ x))
         .text("Entries of Scala.js classpath to link")
       opt[String]("mainMethod")
         .valueName("<full.name.Object.main>")
@@ -135,28 +128,30 @@ object Scalajsld {
         .text("Execute the specified main() method on startup")
       opt[File]('o', "output")
         .valueName("<file>")
-        .action { (x, c) => c.copy(output = Some(x)) }
+        .action((x, c) => c.copy(output = Some(x)))
         .text("Output file of linker (deprecated)")
       opt[File]('z', "outputDir")
         .valueName("<dir>")
-        .action { (x, c) => c.copy(outputDir = Some(x)) }
+        .action((x, c) => c.copy(outputDir = Some(x)))
         .text("Output directory of linker (required)")
       opt[File]("importmap")
         .valueName("<path/to/file>.json")
-        .action { (x, c) => c.copy(importMap = Some(x)) }
-        .text("""Absolute path to an existing json file, e.g. importmap.json the contents of which respect
+        .action((x, c) => c.copy(importMap = Some(x)))
+        .text(
+          """Absolute path to an existing json file, e.g. importmap.json the contents of which respect
                 | https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script/type/importmap#import_map_json_representation
-                | e.g. {"imports": {"square": "./module/shapes/square.js"},"scopes": {"/modules/customshapes/": {"square": "https://example.com/modules/shapes/square.js"}}}""")
+                | e.g. {"imports": {"square": "./module/shapes/square.js"},"scopes": {"/modules/customshapes/": {"square": "https://example.com/modules/shapes/square.js"}}}"""
+        )
       opt[Unit]('f', "fastOpt")
         .action { (_, c) =>
           c.copy(noOpt = false, fullOpt = false)
         }
         .text("Optimize code (this is the default)")
       opt[Unit]('n', "noOpt")
-        .action { (_, c) => c.copy(noOpt = true, fullOpt = false) }
+        .action((_, c) => c.copy(noOpt = true, fullOpt = false))
         .text("Don't optimize code")
       opt[String]("moduleSplitStyle")
-        .action { (x, c) => c.copy(moduleSplitStyle = x) }
+        .action((x, c) => c.copy(moduleSplitStyle = x))
         .text(
           "Module splitting style " + ModuleSplitStyleRead.All
             .mkString("(", ", ", ")")
@@ -185,10 +180,10 @@ object Scalajsld {
         }
         .text("Fully optimize code (uses Google Closure Compiler)")
       opt[Unit]('p', "prettyPrint")
-        .action { (_, c) => c.copy(prettyPrint = true) }
+        .action((_, c) => c.copy(prettyPrint = true))
         .text("Pretty print full opted code (meaningful with -u)")
       opt[Unit]('s', "sourceMap")
-        .action { (_, c) => c.copy(sourceMap = true) }
+        .action((_, c) => c.copy(sourceMap = true))
         .text("Produce a source map for the produced code")
       opt[Unit]("compliantAsInstanceOfs")
         .action { (_, c) =>
@@ -208,19 +203,19 @@ object Scalajsld {
         }
         .text("EsVersion " + EsVersionParser.All.mkString("(", ", ", ")"))
       opt[ModuleKind]('k', "moduleKind")
-        .action { (kind, c) => c.copy(moduleKind = kind) }
+        .action((kind, c) => c.copy(moduleKind = kind))
         .text("Module kind " + ModuleKind.All.mkString("(", ", ", ")"))
       opt[Unit]('c', "checkIR")
-        .action { (_, c) => c.copy(checkIR = true) }
+        .action((_, c) => c.copy(checkIR = true))
         .text("Check IR before optimizing")
       opt[File]('r', "relativizeSourceMap")
         .valueName("<path>")
-        .action { (x, c) => c.copy(relativizeSourceMap = Some(x.toURI)) }
+        .action((x, c) => c.copy(relativizeSourceMap = Some(x.toURI)))
         .text(
           "Relativize source map with respect to given path (meaningful with -s)"
         )
       opt[Unit]("noStdlib")
-        .action { (_, c) => c.copy(stdLib = Nil) }
+        .action((_, c) => c.copy(stdLib = Nil))
         .text("Don't automatically include Scala.js standard library")
       opt[String]("stdlib")
         .valueName("<scala.js stdlib jar>")
@@ -234,23 +229,23 @@ object Scalajsld {
             "Use -n to not include it."
         )
       opt[String]("jsHeader")
-        .action { (jsHeader, c) => c.copy(jsHeader = jsHeader) }
+        .action((jsHeader, c) => c.copy(jsHeader = jsHeader))
         .text("A header that will be added at the top of generated .js files")
       opt[Unit]("longRunning")
-        .action { (_, c) => c.copy(longRunning = true) }
+        .action((_, c) => c.copy(longRunning = true))
         .text("Run linking incrementally every time a line is printed to stdin")
       opt[Unit]("emitWasm")
-        .action { (_, c) => c.copy(emitWasm = true) }
+        .action((_, c) => c.copy(emitWasm = true))
         .text("If present, use the _experimental_ web assembly backend in the linker")
       opt[Unit]('d', "debug")
-        .action { (_, c) => c.copy(logLevel = Level.Debug) }
+        .action((_, c) => c.copy(logLevel = Level.Debug))
         .text("Debug mode: Show full log")
       opt[Unit]('q', "quiet")
-        .action { (_, c) => c.copy(logLevel = Level.Warn) }
+        .action((_, c) => c.copy(logLevel = Level.Warn))
         .text("Only show warnings & errors")
       opt[Unit]("really-quiet")
         .abbr("qq")
-        .action { (_, c) => c.copy(logLevel = Level.Error) }
+        .action((_, c) => c.copy(logLevel = Level.Error))
         .text("Only show errors")
       version("version")
         .abbr("v")
@@ -259,12 +254,11 @@ object Scalajsld {
         .abbr("h")
         .text("prints this usage text")
       checkConfig { c =>
-        if (c.output.isDefined) {
+        if (c.output.isDefined)
           reportWarning(
             "using a single file as output (--output) is deprecated since Scala.js 1.3.0." +
               " Use --outputDir instead."
           )
-        }
 
         val outputCheck = if (c.outputDir.isDefined == c.output.isDefined)
           failure("exactly one of --output or --outputDir have to be defined")
@@ -273,13 +267,11 @@ object Scalajsld {
 
         val importMapCheck = c.importMap match {
           case None => success
-          case Some(value) => {
-            if (!value.exists()) {
-              failure(s"importmap file at path ${value} does not exist.")
-            } else {
+          case Some(value) =>
+            if (!value.exists())
+              failure(s"importmap file at path $value does not exist.")
+            else
               success
-            }
-          }
         }
 
         val allValidations = Seq(outputCheck, importMapCheck)
@@ -289,12 +281,11 @@ object Scalajsld {
         }
       }
 
-
       override def showUsageOnError = Some(true)
     }
 
     for (options <- parser.parse(args, Options())) {
-      val classpath = (options.stdLib ++ options.cp).map(_.toPath())
+      val classpath          = (options.stdLib ++ options.cp).map(_.toPath())
       val moduleInitializers = options.moduleInitializers
 
       val semantics =
@@ -307,7 +298,6 @@ object Scalajsld {
       )
 
       val useClosure = options.fullOpt && options.moduleKind != ModuleKind.ESModule
-
 
       val config = StandardConfig()
         .withSemantics(semantics)
@@ -329,18 +319,18 @@ object Scalajsld {
 
       val linker = StandardImpl.linker(config)
       val logger = new ScalaConsoleLogger(options.logLevel)
-      val cache = StandardImpl.irFileCache().newCache
+      val cache  = StandardImpl.irFileCache().newCache
 
       val stdinLinesIterator = scala.io.Source.stdin.getLines()
 
-      while({
+      while ({
         val result = PathIRContainer
           .fromClasspath(classpath)
           .flatMap(containers => cache.cached(containers._1))
           .flatMap { irFiles: Seq[IRFile] =>
 
             val irImportMappedFiles = options.importMap match {
-              case None => irFiles
+              case None            => irFiles
               case Some(importMap) => ImportMapJsonIr.remapImports(importMap, irFiles)
             }
 
@@ -376,8 +366,10 @@ object Scalajsld {
           if (stdinLinesIterator.hasNext) {
             stdinLinesIterator.next()
             true
-          } else false
-        } else false
+          }
+          else false
+        }
+        else false
       }) {}
     }
   }
@@ -385,11 +377,11 @@ object Scalajsld {
   // Covers deprecated api with not deprecated method. Suppresses warning.
   private abstract class DeprecatedLinkerAPI {
     def link(
-        linker: Linker,
-        irFiles: Seq[IRFile],
-        moduleInitializers: Seq[ModuleInitializer],
-        linkerOutputFile: File,
-        logger: Logger
+      linker: Linker,
+      irFiles: Seq[IRFile],
+      moduleInitializers: Seq[ModuleInitializer],
+      linkerOutputFile: File,
+      logger: Logger
     ): Future[Unit]
   }
 
@@ -398,11 +390,11 @@ object Scalajsld {
 
     @deprecated("Deprecate to silence warnings", "never/always")
     def link(
-        linker: Linker,
-        irFiles: Seq[IRFile],
-        moduleInitializers: Seq[ModuleInitializer],
-        linkerOutputFile: File,
-        logger: Logger
+      linker: Linker,
+      irFiles: Seq[IRFile],
+      moduleInitializers: Seq[ModuleInitializer],
+      linkerOutputFile: File,
+      logger: Logger
     ): Future[Unit] = {
       val js = linkerOutputFile.toPath()
       val sm = js.resolveSibling(js.getFileName().toString() + ".map")

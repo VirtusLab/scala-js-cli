@@ -24,7 +24,12 @@ class Tests extends munit.FunSuite {
     .out
     .trim()
 
-  def getScalaJsCompilerPlugin(cwd: os.Path) = os.proc("cs", "fetch", "--intransitive", s"org.scala-js:scalajs-compiler_2.13.16:$scalaJsVersion")
+  def getScalaJsCompilerPlugin(cwd: os.Path) = os.proc(
+    "cs",
+    "fetch",
+    "--intransitive",
+    s"org.scala-js:scalajs-compiler_2.13.16:$scalaJsVersion"
+  )
     .call(cwd = cwd).out.trim()
 
   test("tests") {
@@ -75,12 +80,12 @@ class Tests extends munit.FunSuite {
       "Warning: using a single file as output (--output) is deprecated since Scala.js 1.3.0. Use --outputDir instead."
     assert(res.err.text().contains(expectedInOutput))
 
-    val testJsSize = os.size(dir / "test.js")
+    val testJsSize    = os.size(dir / "test.js")
     val testJsMapSize = os.size(dir / "test.js.map")
     assert(testJsSize > 0)
     assert(testJsMapSize > 0)
 
-    val runRes = os.proc("node", "test.js").call(cwd = dir)
+    val runRes    = os.proc("node", "test.js").call(cwd = dir)
     val runOutput = runRes.out.trim()
     assert(runOutput == "asdf 2")
 
@@ -115,17 +120,16 @@ class Tests extends munit.FunSuite {
 
   test("longRunning") {
     val dir = os.temp.dir()
-    def writePrintlnMain(stringToPrint: String) = {
+    def writePrintlnMain(stringToPrint: String) =
       os.write.over(
         dir / "foo.scala",
         s"""object Foo {
-          |  def main(args: Array[String]): Unit = {
-          |    println("$stringToPrint")
-          |  }
-          |}
-          |""".stripMargin
+           |  def main(args: Array[String]): Unit = {
+           |    println("$stringToPrint")
+           |  }
+           |}
+           |""".stripMargin
       )
-    }
 
     val scalaJsLibraryCp = getScalaJsLibraryCp(dir)
 
@@ -158,30 +162,29 @@ class Tests extends munit.FunSuite {
         "-mm",
         "Foo.main",
         "--longRunning",
-        "bin",
+        "bin"
       )
 
     writePrintlnMain("first version")
     compile()
     val process = command.spawn(cwd = dir)
 
-    def waitForLinkingToFinish() = {
-      while({
+    def waitForLinkingToFinish() =
+      while ({
         val line = process.stdout.readLine()
         assert(line != null, "Got null from reading stdout")
         line != "SCALA_JS_LINKING_DONE"
       }) {}
-    }
 
     try {
       locally {
         waitForLinkingToFinish()
-        val testJsSize = os.size(dir / "test.js")
+        val testJsSize    = os.size(dir / "test.js")
         val testJsMapSize = os.size(dir / "test.js.map")
         assert(testJsSize > 0)
         assert(testJsMapSize > 0)
 
-        val runRes = os.proc("node", "test.js").call(cwd = dir)
+        val runRes    = os.proc("node", "test.js").call(cwd = dir)
         val runOutput = runRes.out.trim()
         assert(runOutput == "first version")
       }
@@ -196,12 +199,12 @@ class Tests extends munit.FunSuite {
       waitForLinkingToFinish()
 
       locally {
-        val testJsSize = os.size(dir / "test.js")
+        val testJsSize    = os.size(dir / "test.js")
         val testJsMapSize = os.size(dir / "test.js.map")
         assert(testJsSize > 0)
         assert(testJsMapSize > 0)
 
-        val runRes = os.proc("node", "test.js").call(cwd = dir)
+        val runRes    = os.proc("node", "test.js").call(cwd = dir)
         val runOutput = runRes.out.trim()
         assertEquals(runOutput, "second version")
       }
@@ -213,10 +216,10 @@ class Tests extends munit.FunSuite {
       Thread.sleep(100)
 
       assert(!process.isAlive(), "process did not terminate gracefully")
-    } finally {
+    }
+    finally
 
       process.close()
-    }
   }
 
   test("fullLinkJs mode does not throw") {
@@ -265,14 +268,13 @@ class Tests extends munit.FunSuite {
       )
       .call(cwd = dir, mergeErrIntoOut = true)
 
-    val testJsSize = os.size(dir / "test.js")
+    val testJsSize    = os.size(dir / "test.js")
     val testJsMapSize = os.size(dir / "test.js.map")
     assert(testJsSize > 0)
     assert(testJsMapSize > 0)
 
     os.proc("node", "test.js").call(cwd = dir, check = true)
   }
-
 
   test("using fullLinkJS with ES modules succeeds") {
     val dir = os.temp.dir()
@@ -322,14 +324,13 @@ class Tests extends munit.FunSuite {
       )
       .call(cwd = dir, mergeErrIntoOut = true)
 
-    val testJsSize = os.size(dir / "test.js")
+    val testJsSize    = os.size(dir / "test.js")
     val testJsMapSize = os.size(dir / "test.js.map")
     assert(testJsSize > 0)
     assert(testJsMapSize > 0)
 
     os.proc("node", "test.js").call(cwd = dir, check = true)
   }
-
 
   test("fastLinkJs mode throws") {
     val dir = os.temp.dir()
@@ -377,7 +378,7 @@ class Tests extends munit.FunSuite {
       )
       .call(cwd = dir, mergeErrIntoOut = true)
 
-    val testJsSize = os.size(dir / "test.js")
+    val testJsSize    = os.size(dir / "test.js")
     val testJsMapSize = os.size(dir / "test.js.map")
     assert(testJsSize > 0)
     assert(testJsMapSize > 0)
@@ -429,76 +430,82 @@ class Tests extends munit.FunSuite {
 
     val notThereYet = dir / "no-worky.json"
     val launcherRes = os.proc(
-        launcher,
-        "--stdlib",
-        scalaJsLibraryCp,
-        "--fastOpt",
-        "-s",
-        "-o",
-        "test.js",
-        "-mm",
-        "Foo.main",
-        "bin",
-        "--importmap",
-        notThereYet
-      )
+      launcher,
+      "--stdlib",
+      scalaJsLibraryCp,
+      "--fastOpt",
+      "-s",
+      "-o",
+      "test.js",
+      "-mm",
+      "Foo.main",
+      "bin",
+      "--importmap",
+      notThereYet
+    )
       .call(cwd = dir, mergeErrIntoOut = true)
 
-    assert(launcherRes.exitCode == 0) // as far as I can tell launcher returns code 0 for failed validation?
-    assert(launcherRes.out.trim().contains(s"importmap file at path ${notThereYet} does not exist"))
+    assert(
+      launcherRes.exitCode == 0
+    ) // as far as I can tell launcher returns code 0 for failed validation?
+    assert(launcherRes.out.trim().contains(s"importmap file at path $notThereYet does not exist"))
 
     os.write(notThereYet, "...")
 
     val failToParse = os.proc(
-        launcher,
-        "--stdlib",
-        scalaJsLibraryCp,
-        "--fastOpt",
-        "-s",
-        "-o",
-        "test.js",
-        "-mm",
-        "Foo.main",
-        "bin",
-        "--importmap",
-        notThereYet
-      )
+      launcher,
+      "--stdlib",
+      scalaJsLibraryCp,
+      "--fastOpt",
+      "-s",
+      "-o",
+      "test.js",
+      "-mm",
+      "Foo.main",
+      "bin",
+      "--importmap",
+      notThereYet
+    )
       .call(cwd = dir, check = false, mergeErrIntoOut = true, stderr = os.Pipe)
 
-    assert(failToParse.out.text().contains("com.github.plokhotnyuk.jsoniter_scala.core.JsonReaderException"))
+    assert(failToParse.out.text().contains(
+      "com.github.plokhotnyuk.jsoniter_scala.core.JsonReaderException"
+    ))
 
     val importmap = dir / "importmap.json"
-    val substTo = "https://cdn.jsdelivr.net/gh/stdlib-js/array-base-linspace@esm/index.mjs"
+    val substTo   = "https://cdn.jsdelivr.net/gh/stdlib-js/array-base-linspace@esm/index.mjs"
     os.write(importmap, s"""{ "imports": {"@stdlib/linspace":"$substTo"}}""")
 
     val out = os.makeDir.all(dir / "out")
 
     val worky = os.proc(
-        launcher,
-        "--stdlib",
-        scalaJsLibraryCp,
-        "--fastOpt",
-        "-s",
-        "--outputDir",
-        "out",
-        "-mm",
-        "Foo.main",
-        "bin",
-        "--moduleKind",
-        "ESModule",
-        "--importmap",
-        importmap
-      )
+      launcher,
+      "--stdlib",
+      scalaJsLibraryCp,
+      "--fastOpt",
+      "-s",
+      "--outputDir",
+      "out",
+      "-mm",
+      "Foo.main",
+      "bin",
+      "--moduleKind",
+      "ESModule",
+      "--importmap",
+      importmap
+    )
       .call(cwd = dir, check = false, mergeErrIntoOut = true, stderr = os.Pipe)
-    os.write( dir / "out" / "index.html", """<html><head><script type="module" src="main.js"></script></head><body></body></html>""")
+    os.write(
+      dir / "out" / "index.html",
+      """<html><head><script type="module" src="main.js"></script></head><body></body></html>"""
+    )
 
     // You can serve the HTML file here and check the console output of the index.html file, hosted in a simple webserver to prove the concept
-    //println(dir)
+    // println(dir)
     assert(os.exists(dir / "out" / "main.js"))
     val rawJs = os.read.lines(dir / "out" / "main.js")
     assert(rawJs(1).contains(substTo))
   }
-
 
   test("wasm flag emits wasm") {
     val dir = os.temp.dir()
@@ -550,12 +557,18 @@ class Tests extends munit.FunSuite {
       .call(cwd = dir, mergeErrIntoOut = true)
 
     os.walk(dir).foreach(println)
-    val testSize = os.size(dir / "out" / "main.wasm")
+    val testSize    = os.size(dir / "out" / "main.wasm")
     val testMapSize = os.size(dir / "out" / "main.wasm.map")
     assert(testSize > 0)
     assert(testMapSize > 0)
 
-    os.proc("node", "--experimental-wasm-exnref", "main.js").call(cwd = dir / "out", check = true, stdin = os.Inherit, stdout = os.Inherit, stderr = os.Inherit)
+    os.proc("node", "--experimental-wasm-exnref", "main.js").call(
+      cwd = dir / "out",
+      check = true,
+      stdin = os.Inherit,
+      stdout = os.Inherit,
+      stderr = os.Inherit
+    )
 
   }
 }
