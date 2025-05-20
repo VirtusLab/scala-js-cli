@@ -5,8 +5,8 @@ import org.scalajs.linker.interface.{ModuleSplitStyle => ActualModuleSplitStyle}
 // class rather than object, as that's easier to substitute from native-image
 class ModuleSplitStyleParser {
   def parse(
-      splitStyle: String,
-      modulePackages: Array[String]
+    splitStyle: String,
+    modulePackages: Array[String]
   ): ModuleSplitStyle =
     if (splitStyle == ActualModuleSplitStyle.FewestModules.toString)
       ModuleSplitStyle(ActualModuleSplitStyle.FewestModules)
@@ -20,7 +20,8 @@ class ModuleSplitStyleParser {
       ModuleSplitStyle(
         ActualModuleSplitStyle.SmallModulesFor(modulePackages.toList)
       )
-    } else
+    }
+    else
       throw new IllegalArgumentException(
         s"$splitStyle is not a valid module split style"
       )

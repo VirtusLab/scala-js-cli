@@ -8,7 +8,19 @@ on:
   pull_request:
 
 jobs:
+  format:
+    timeout-minutes: 15
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: true
+      - uses: VirtusLab/scala-cli-setup@v1
+      - run: scala-cli fmt . --check
+
   test:
+    needs: format
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
@@ -27,7 +39,9 @@ jobs:
         run: ./mill -i 'tests.test'
 
   publish:
-    needs: test
+    needs:
+      - test
+      - format
     runs-on: ubuntu-24.04
     if: github.event_name == 'push'
     steps:
@@ -48,7 +62,9 @@ jobs:
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
 
   generate-launchers:
-    needs: test
+    needs:
+      - test
+      - format
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -91,7 +107,9 @@ jobs:
           UPLOAD_GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   generate-static-launcher:
-    needs: test
+    needs:
+      - test
+      - format
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
@@ -124,7 +142,9 @@ jobs:
           UPLOAD_GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   generate-mostly-static-launcher:
-    needs: test
+    needs:
+      - test
+      - format
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false

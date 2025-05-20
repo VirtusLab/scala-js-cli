@@ -32,8 +32,8 @@ import java.nio.file.Path
 object Scalajsp {
 
   private case class Options(
-      jar: Option[File] = None,
-      fileNames: immutable.Seq[String] = Nil
+    jar: Option[File] = None,
+    fileNames: immutable.Seq[String] = Nil
   )
 
   def main(args: Array[String]): Unit = {
@@ -41,11 +41,11 @@ object Scalajsp {
       head("scalajsp", ScalaJSVersions.current)
       arg[String]("<file> ...")
         .unbounded()
-        .action { (x, c) => c.copy(fileNames = c.fileNames :+ x) }
+        .action((x, c) => c.copy(fileNames = c.fileNames :+ x))
         .text("*.sjsir file to display content of")
       opt[File]('j', "jar")
         .valueName("<jar>")
-        .action { (x, c) => c.copy(jar = Some(x)) }
+        .action((x, c) => c.copy(jar = Some(x)))
         .text("Read *.sjsir file(s) from the given JAR.")
       opt[Unit]('s', "supported")
         .action { (_, _) =>
@@ -63,7 +63,7 @@ object Scalajsp {
     }
 
     for {
-      options <- parser.parse(args, Options())
+      options  <- parser.parse(args, Options())
       fileName <- options.fileNames
     } {
       val vfile = options.jar
@@ -104,13 +104,12 @@ object Scalajsp {
   private def readFromFile(fileName: String): Future[IRFile] = {
     val file = new File(fileName)
 
-    if (!file.exists) {
+    if (!file.exists)
       fail(s"No such file: $fileName")
-    } else if (!file.canRead) {
+    else if (!file.canRead)
       fail(s"Unable to read file: $fileName")
-    } else {
+    else
       PathIRFile(file.toPath())
-    }
   }
 
   private def readFromJar(jar: File, name: String): Future[IRFile] = {
@@ -118,7 +117,7 @@ object Scalajsp {
      * probably does not matter, and this implementation is very simple.
      */
 
-    def findRequestedClass(sjsirFiles: Seq[IRFile]): Future[IRFile] = {
+    def findRequestedClass(sjsirFiles: Seq[IRFile]): Future[IRFile] =
       Future
         .traverse(sjsirFiles) { irFile =>
           val ir = IRFileImpl.fromIRFile(irFile)
@@ -138,17 +137,14 @@ object Scalajsp {
               fail(s"No such class in jar: $name")
             }
         }
-    }
 
     val cache = StandardImpl.irFileCache().newCache
 
     for {
       (containers, _) <- PathIRContainer.fromClasspath(jar.toPath() :: Nil)
-      irFiles <- cache.cached(containers)
-      requestedFile <- findRequestedClass(irFiles)
-    } yield {
-      requestedFile
-    }
+      irFiles         <- cache.cached(containers)
+      requestedFile   <- findRequestedClass(irFiles)
+    } yield requestedFile
   }
 
   private val stdout =
