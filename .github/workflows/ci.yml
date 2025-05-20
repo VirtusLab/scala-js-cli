@@ -85,7 +85,7 @@ jobs:
           path: artifacts/
           if-no-files-found: error
           retention-days: 1
-      - run: ./mill -i ci.upload artifacts/
+      - run: ./mill -i ci.upload --directory artifacts/
         if: github.event_name == 'push'
         env:
           UPLOAD_GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
