@@ -2,6 +2,7 @@ import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version::0.4.1`
 import $ivy.`io.github.alexarchambault.mill::mill-native-image::0.1.31-1`
 import $ivy.`io.github.alexarchambault.mill::mill-native-image-upload:0.1.31-1`
 import $ivy.`io.get-coursier::coursier-launcher:2.1.24`
+import $ivy.`com.goyeau::mill-scalafix::0.5.1`
 import build_.package_.native0
 import de.tobiasroeser.mill.vcs.version._
 import io.github.alexarchambault.millnativeimage.NativeImage
@@ -15,6 +16,7 @@ import org.jgrapht.graph.DefaultGraphType.simple
 import scala.annotation.unused
 import scala.concurrent.duration._
 import scala.util.Properties.isWin
+import com.goyeau.mill.scalafix.ScalafixModule
 
 object Versions {
   def scala213                = "2.13.16"
@@ -29,9 +31,13 @@ object Versions {
   def scoptVersion            = "4.1.0"
   def ubuntuVersion           = "24.04"
 }
+trait ScalaJsCliModule extends ScalaModule with ScalafixModule {
+  override def scalacOptions: Target[Seq[String]] = super.scalacOptions.map(_ ++ Seq("-Wunused"))
+  def scalaVersion: Target[String]                = Versions.scala213
+}
+
 object cli extends Cli
-trait Cli extends ScalaModule with ScalaJsCliPublishModule {
-  def scalaVersion: Target[String] = Versions.scala213
+trait Cli extends ScalaJsCliModule with ScalaJsCliPublishModule {
   def artifactName: Target[String] = "scalajs" + super.artifactName()
   def ivyDeps: Target[Agg[Dep]] = super.ivyDeps() ++ Seq(
     ivy"org.scala-js::scalajs-linker:${Versions.scalaJsVersion}",
@@ -97,8 +103,7 @@ trait Cli extends ScalaModule with ScalaJsCliPublishModule {
   }
 }
 
-trait ScalaJsCliNativeImage extends ScalaModule with NativeImage {
-  def scalaVersion: Target[String] = Versions.scala213
+trait ScalaJsCliNativeImage extends ScalaJsCliModule with NativeImage {
 
   def nativeImageClassPath: Target[Seq[PathRef]] = Task {
     runClasspath()
@@ -176,8 +181,7 @@ trait ScalaJsCliMostlyStaticNativeImage extends ScalaJsCliNativeImage {
 object `native-mostly-static` extends ScalaJsCliMostlyStaticNativeImage
 
 @unused
-object tests extends ScalaModule {
-  def scalaVersion: Target[String] = Versions.scala213
+object tests extends ScalaJsCliModule {
 
   @unused
   object test extends ScalaTests with TestModule.Munit {

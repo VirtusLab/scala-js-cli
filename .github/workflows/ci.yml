@@ -19,8 +19,25 @@ jobs:
       - uses: VirtusLab/scala-cli-setup@v1
       - run: scala-cli fmt . --check
 
+  scalafix:
+    timeout-minutes: 15
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          submodules: true
+      - uses: coursier/cache-action@v6
+      - uses: coursier/setup-action@v1
+        with:
+          jvm: temurin:17
+      - name: Run scalafix
+        run: ./mill -i __.fix --check
+
   test:
-    needs: format
+    needs:
+      - format
+      - scalafix
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
@@ -42,6 +59,7 @@ jobs:
     needs:
       - test
       - format
+      - scalafix
     runs-on: ubuntu-24.04
     if: github.event_name == 'push'
     steps:
@@ -65,6 +83,7 @@ jobs:
     needs:
       - test
       - format
+      - scalafix
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -110,6 +129,7 @@ jobs:
     needs:
       - test
       - format
+      - scalafix
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
@@ -145,6 +165,7 @@ jobs:
     needs:
       - test
       - format
+      - scalafix
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false

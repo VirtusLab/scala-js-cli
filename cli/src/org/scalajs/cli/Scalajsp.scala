@@ -8,26 +8,19 @@
 
 package org.scalajs.cli
 
-import org.scalajs.ir.ScalaJSVersions
-import org.scalajs.ir.Trees.{Tree, ClassDef}
 import org.scalajs.ir.Printers.IRTreePrinter
-
+import org.scalajs.ir.ScalaJSVersions
 import org.scalajs.linker._
 import org.scalajs.linker.interface._
 import org.scalajs.linker.interface.unstable.IRFileImpl
-import org.scalajs.linker.standard._
-
-import scala.collection.immutable
-
-import scala.concurrent._
-import scala.concurrent.duration.Duration
-import scala.concurrent.ExecutionContext.Implicits.global
-
-import scala.util.{Failure, Success}
 
 import java.io.{Console => _, _}
-import java.util.zip.{ZipFile, ZipEntry}
-import java.nio.file.Path
+
+import scala.collection.immutable
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent._
+import scala.concurrent.duration.Duration
+import scala.util.{Failure, Success}
 
 object Scalajsp {
 

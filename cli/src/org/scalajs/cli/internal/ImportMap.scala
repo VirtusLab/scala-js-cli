@@ -1,10 +1,11 @@
 package org.scalajs.cli.internal
 
+import com.armanbilge.sjsimportmap.ImportMappedIRFile
 import com.github.plokhotnyuk.jsoniter_scala.core._
 import com.github.plokhotnyuk.jsoniter_scala.macros._
 import org.scalajs.linker.interface.IRFile
+
 import java.io.File
-import com.armanbilge.sjsimportmap.ImportMappedIRFile
 
 object ImportMapJsonIr {
 

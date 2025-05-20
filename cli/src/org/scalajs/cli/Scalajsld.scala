@@ -7,29 +7,21 @@
 \*                                                                                     */
 
 package org.scalajs.cli
-
+import org.scalajs.cli.internal.{EsVersionParser, ImportMapJsonIr, ModuleSplitStyleParser}
 import org.scalajs.ir.ScalaJSVersions
-
+import org.scalajs.linker._
+import org.scalajs.linker.interface.CheckedBehavior.Compliant
+import org.scalajs.linker.interface._
 import org.scalajs.logging._
 
-import org.scalajs.linker._
-import org.scalajs.linker.interface._
-
-import CheckedBehavior.Compliant
-
-import scala.concurrent.{Await, Future}
-import scala.concurrent.duration.Duration
-import scala.concurrent.ExecutionContext.Implicits.global
-
 import java.io.File
+import java.lang.NoClassDefFoundError
 import java.net.URI
 import java.nio.file.Path
-import java.lang.NoClassDefFoundError
-import org.scalajs.cli.internal.{EsVersionParser, ModuleSplitStyleParser}
-import org.scalajs.cli.internal.ImportMapJsonIr.ImportMap
 
-import com.github.plokhotnyuk.jsoniter_scala.core._
-import org.scalajs.cli.internal.ImportMapJsonIr
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
 
 object Scalajsld {
 
