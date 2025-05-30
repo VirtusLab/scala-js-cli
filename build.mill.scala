@@ -17,6 +17,7 @@ import scala.annotation.unused
 import scala.concurrent.duration._
 import scala.util.Properties.isWin
 import com.goyeau.mill.scalafix.ScalafixModule
+import com.lumidion.sonatype.central.client.core.{PublishingType, SonatypeCredentials}
 
 object Versions {
   def scala213                = "2.13.16"
@@ -229,13 +230,14 @@ object tests extends ScalaJsCliModule {
   }
 }
 
-def ghOrg  = "virtuslab"
-def ghName = "scala-js-cli"
-trait ScalaJsCliPublishModule extends PublishModule {
+def ghOrg      = "virtuslab"
+def ghName     = "scala-js-cli"
+def publishOrg = "org.virtuslab.scala-cli"
+trait ScalaJsCliPublishModule extends SonatypeCentralPublishModule {
   import mill.scalalib.publish._
   def pomSettings: Target[PomSettings] = PomSettings(
     description = artifactName(),
-    organization = "org.virtuslab.scala-cli",
+    organization = publishOrg,
     url = s"https://github.com/$ghOrg/$ghName",
     licenses = Seq(License.`BSD-3-Clause`),
     versionControl = VersionControl.github(ghOrg, ghName),
@@ -313,11 +315,16 @@ object ci extends Module {
   @unused
   def publishSonatype(tasks: mill.main.Tasks[PublishModule.PublishData]): Command[Unit] =
     Task.Command {
+      val publishVersion = finalPublishVersion
+      System.err.println(s"Publish version: $publishVersion")
+      val bundleName = s"$publishOrg-$ghName-$publishVersion"
+      System.err.println(s"Publishing bundle: $bundleName")
       publishSonatype0(
         data = define.Target.sequence(tasks.value)(),
         log = Task.ctx().log,
         workspace = Task.workspace,
-        env = Task.env
+        env = Task.env,
+        bundleName = bundleName
       )
     }
 
@@ -325,10 +332,13 @@ object ci extends Module {
     data: Seq[PublishModule.PublishData],
     log: mill.api.Logger,
     workspace: os.Path,
-    env: Map[String, String]
+    env: Map[String, String],
+    bundleName: String
   ): Unit = {
-
-    val credentials = sys.env("SONATYPE_USERNAME") + ":" + sys.env("SONATYPE_PASSWORD")
+    val credentials = SonatypeCredentials(
+      username = sys.env("SONATYPE_USERNAME"),
+      password = sys.env("SONATYPE_PASSWORD")
+    )
     val pgpPassword = sys.env("PGP_PASSPHRASE")
     val timeout     = 10.minutes
 
@@ -345,11 +355,8 @@ object ci extends Module {
       )
       set.head
     }
-    val publisher = new scalalib.publish.SonatypePublisher(
-      uri = "https://oss.sonatype.org/service/local",
-      snapshotUri = "https://oss.sonatype.org/content/repositories/snapshots",
+    val publisher = new SonatypeCentralPublisher(
       credentials = credentials,
-      signed = true,
       gpgArgs = Seq(
         "--detach-sign",
         "--batch=true",
@@ -366,11 +373,15 @@ object ci extends Module {
       log = log,
       workspace = workspace,
       env = env,
-      awaitTimeout = timeout.toMillis.toInt,
-      stagingRelease = isRelease
+      awaitTimeout = timeout.toMillis.toInt
     )
-
-    publisher.publishAll(isRelease, artifacts: _*)
+    val publishingType  = if (isRelease) PublishingType.AUTOMATIC else PublishingType.USER_MANAGED
+    val finalBundleName = if (bundleName.nonEmpty) Some(bundleName) else None
+    publisher.publishAll(
+      publishingType = publishingType,
+      singleBundleName = finalBundleName,
+      artifacts = artifacts: _*
+    )
   }
   @unused
   def upload(directory: String = "artifacts/"): Command[Unit] = Task.Command {
