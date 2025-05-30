@@ -315,13 +315,17 @@ object ci extends Module {
     Task.Command {
       publishSonatype0(
         data = define.Target.sequence(tasks.value)(),
-        log = Task.ctx().log
+        log = Task.ctx().log,
+        workspace = Task.workspace,
+        env = Task.env
       )
     }
 
   private def publishSonatype0(
     data: Seq[PublishModule.PublishData],
-    log: mill.api.Logger
+    log: mill.api.Logger,
+    workspace: os.Path,
+    env: Map[String, String]
   ): Unit = {
 
     val credentials = sys.env("SONATYPE_USERNAME") + ":" + sys.env("SONATYPE_PASSWORD")
@@ -360,6 +364,8 @@ object ci extends Module {
       readTimeout = timeout.toMillis.toInt,
       connectTimeout = timeout.toMillis.toInt,
       log = log,
+      workspace = workspace,
+      env = env,
       awaitTimeout = timeout.toMillis.toInt,
       stagingRelease = isRelease
     )
