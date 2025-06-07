@@ -21,7 +21,7 @@ object ImportMapJsonIr {
   }
 
   def remapImports(pathToImportPath: File, irFiles: Seq[IRFile]): Seq[IRFile] = {
-    val path = os.Path(pathToImportPath)
+    val path          = os.Path(pathToImportPath)
     val importMapJson = if (os.exists(path))
       readFromString[ImportMap](os.read(path))
     else
