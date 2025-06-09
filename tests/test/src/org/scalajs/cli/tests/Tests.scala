@@ -119,7 +119,7 @@ class Tests extends munit.FunSuite {
   }
 
   test("longRunning") {
-    val dir = os.temp.dir()
+    val dir                                     = os.temp.dir()
     def writePrintlnMain(stringToPrint: String) =
       os.write.over(
         dir / "foo.scala",

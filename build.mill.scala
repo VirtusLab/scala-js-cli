@@ -38,9 +38,9 @@ trait ScalaJsCliModule extends ScalaModule with ScalafixModule {
 }
 
 object cli extends Cli
-trait Cli extends ScalaJsCliModule with ScalaJsCliPublishModule {
+trait Cli  extends ScalaJsCliModule with ScalaJsCliPublishModule {
   def artifactName: Target[String] = "scalajs" + super.artifactName()
-  def ivyDeps: Target[Agg[Dep]] = super.ivyDeps() ++ Seq(
+  def ivyDeps: Target[Agg[Dep]]    = super.ivyDeps() ++ Seq(
     ivy"org.scala-js::scalajs-linker:${Versions.scalaJsVersion}",
     ivy"com.github.scopt::scopt:${Versions.scoptVersion}",
     ivy"com.lihaoyi::os-lib:${Versions.osLibVersion}",
@@ -94,7 +94,7 @@ trait Cli extends ScalaJsCliModule with ScalaJsCliPublishModule {
       }
     }
     val loaderContent = coursier.launcher.ClassLoaderContent(entries)
-    val params = Parameters.Bootstrap(Seq(loaderContent), mainClass0)
+    val params        = Parameters.Bootstrap(Seq(loaderContent), mainClass0)
       .withDeterministic(true)
       .withPreamble(preamble)
 
@@ -122,7 +122,7 @@ trait ScalaJsCliNativeImage extends ScalaJsCliModule with NativeImage {
   def nativeImageGraalVmJvmId: Target[String] = s"graalvm-java17:$graalVmVersion"
   def nativeImageName: Target[String]         = "scala-js-ld"
   def moduleDeps: Seq[JavaModule]             = Seq(cli)
-  def compileIvyDeps: Target[Agg[Dep]] =
+  def compileIvyDeps: Target[Agg[Dep]]        =
     super.compileIvyDeps() ++ Seq(ivy"org.graalvm.nativeimage:svm:$graalVmVersion")
   def nativeImageMainClass: Target[String] = "org.scalajs.cli.Scalajsld"
 
@@ -147,7 +147,7 @@ def native0: native.type = native
 def csVersion: String = Versions.coursierVersion
 
 trait ScalaJsCliStaticNativeImage extends ScalaJsCliNativeImage {
-  def nameSuffix = "-static"
+  def nameSuffix                     = "-static"
   def buildHelperImage: Target[Unit] = Task {
     os.proc("docker", "build", "-t", "scala-cli-base-musl:latest", ".")
       .call(cwd = Task.workspace / "musl-image", stdout = os.Inherit)
@@ -171,7 +171,7 @@ trait ScalaJsCliStaticNativeImage extends ScalaJsCliNativeImage {
 object `native-static` extends ScalaJsCliStaticNativeImage
 
 trait ScalaJsCliMostlyStaticNativeImage extends ScalaJsCliNativeImage {
-  def nameSuffix = "-mostly-static"
+  def nameSuffix                                                        = "-mostly-static"
   def nativeImageDockerParams: Target[Option[NativeImage.DockerParams]] = Some(
     NativeImage.linuxMostlyStaticParams(
       s"ubuntu:${Versions.ubuntuVersion}",
@@ -387,7 +387,7 @@ object ci extends Module {
   def upload(directory: String = "artifacts/"): Command[Unit] = Task.Command {
     val version = finalPublishVersion()
 
-    val path = os.Path(directory, Task.workspace)
+    val path      = os.Path(directory, Task.workspace)
     val launchers = os.list(path).filter(os.isFile(_)).map { path =>
       path -> path.last
     }

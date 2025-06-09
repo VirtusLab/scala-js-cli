@@ -15,7 +15,7 @@ object EsVersionParser {
       case "es2019" => ESVersion.ES2019
       case "es2020" => ESVersion.ES2020
       case "es2021" => ESVersion.ES2021
-      case unknown =>
+      case unknown  =>
         throw new IllegalArgumentException(
           s"Warning: unrecognized argument: $unknown for --esVersion parameter"
         )

@@ -266,7 +266,7 @@ object Scalajsld {
           success
 
         val importMapCheck = c.importMap match {
-          case None => success
+          case None        => success
           case Some(value) =>
             if (!value.exists())
               failure(s"importmap file at path $value does not exist.")
