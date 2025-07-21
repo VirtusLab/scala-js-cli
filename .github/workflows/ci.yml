@@ -102,16 +102,16 @@ jobs:
         with:
           node-version: '22'
       - run: |
-          ./mill -i "native.writeNativeImageScript" --scriptDest generate.sh --imageDest "" && \
+          ./mill -i native.writeNativeImageScript --scriptDest generate.sh --imageDest "" && \
           ./generate.sh && \
           ./mill -i "tests.test.native" && \
           ./mill -i "native.copyToArtifacts" --directory artifacts/
         if: runner.os != 'Windows'
       - run: |
-          @call ./mill.bat -i "native.writeNativeImageScript" --scriptDest generate.bat --imageDest ""
+          @call ./mill.bat -i native.writeNativeImageScript --scriptDest generate.bat --imageDest ""
           @call generate.bat
-          @call ./mill.bat -i "tests.test.native"
-          @call ./mill.bat -i "native.copyToArtifacts" --directory artifacts/
+          @call ./mill.bat -i tests.test.native
+          @call ./mill.bat -i native.copyToArtifacts --directory artifacts/
         shell: cmd
         if: runner.os == 'Windows'
       - uses: actions/upload-artifact@v4
@@ -146,10 +146,10 @@ jobs:
         with:
           node-version: '22'
       - run: |
-          ./mill -i "native-static.writeNativeImageScript" --scriptDest generate.sh --imageDest "" && \
+          ./mill -i native-static.writeNativeImageScript --scriptDest generate.sh --imageDest "" && \
           ./generate.sh && \
-          ./mill -i "tests.test.nativeStatic" && \
-          ./mill -i "native-static.copyToArtifacts" --directory artifacts/
+          ./mill -i tests.test.nativeStatic && \
+          ./mill -i native-static.copyToArtifacts --directory artifacts/
       - uses: actions/upload-artifact@v4
         with:
           name: launcher-${{ matrix.os }}-static
@@ -181,11 +181,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: |
-          ./mill -i "native-mostly-static.writeNativeImageScript" --scriptDest generate.sh --imageDest "" && \
+      - run: | # TODO get rid of --no-filesystem-checker
+          ./mill -i native-mostly-static.writeNativeImageScript --scriptDest generate.sh --imageDest "" && \
           ./generate.sh && \
-          ./mill -i "tests.test.nativeStatic" && \
-          ./mill -i "native-mostly-static.copyToArtifacts" --directory artifacts/
+          ./mill -i --no-filesystem-checker tests.test.nativeStatic && \
+          ./mill -i native-mostly-static.copyToArtifacts --directory artifacts/
       - uses: actions/upload-artifact@v4
         with:
           name: launcher-${{ matrix.os }}-mostly-static
