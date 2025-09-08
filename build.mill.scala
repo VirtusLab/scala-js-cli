@@ -1,6 +1,6 @@
 //| mvnDeps:
-//| - io.github.alexarchambault.mill::mill-native-image::0.2.0
-//| - io.github.alexarchambault.mill::mill-native-image-upload:0.2.0
+//| - io.github.alexarchambault.mill::mill-native-image::0.2.2
+//| - io.github.alexarchambault.mill::mill-native-image-upload:0.2.2
 //| - com.goyeau::mill-scalafix::0.6.0
 //| - com.lumidion::sonatype-central-client-requests:0.6.0
 //| - io.get-coursier:coursier-launcher_2.13:2.1.24
@@ -22,13 +22,13 @@ import com.lumidion.sonatype.central.client.core.{PublishingType, SonatypeCreden
 
 object Versions {
   def scala213                = "2.13.16"
-  def scalaJsVersion          = "1.19.0"
-  def jsoniterVersion         = "2.36.7"
+  def scalaJsVersion          = "1.20.1"
+  def jsoniterVersion         = "2.37.10"
   def scalaJsImportMapVersion = "0.1.1"
   def graalVmVersion          = "22.3.1"
   def munitVersion            = "1.1.1"
-  def osLibVersion            = "0.11.4"
-  def pprintVersion           = "0.9.0"
+  def osLibVersion            = "0.11.5"
+  def pprintVersion           = "0.9.3"
   def coursierVersion         = "2.1.24"
   def scoptVersion            = "4.1.0"
   def ubuntuVersion           = "24.04"
