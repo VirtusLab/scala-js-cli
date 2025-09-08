@@ -1,6 +1,6 @@
 //| mvnDeps:
-//| - io.github.alexarchambault.mill::mill-native-image::0.2.0
-//| - io.github.alexarchambault.mill::mill-native-image-upload:0.2.0
+//| - io.github.alexarchambault.mill::mill-native-image::0.2.2
+//| - io.github.alexarchambault.mill::mill-native-image-upload:0.2.2
 //| - com.goyeau::mill-scalafix::0.6.0
 //| - com.lumidion::sonatype-central-client-requests:0.6.0
 //| - io.get-coursier:coursier-launcher_2.13:2.1.24
