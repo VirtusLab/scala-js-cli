@@ -3,7 +3,7 @@
 //| - io.github.alexarchambault.mill::mill-native-image-upload:0.2.2
 //| - com.goyeau::mill-scalafix::0.6.0
 //| - com.lumidion::sonatype-central-client-requests:0.6.0
-//| - io.get-coursier:coursier-launcher_2.13:2.1.24
+//| - io.get-coursier:coursier-launcher_2.13:2.1.25-M19
 package build
 
 import io.github.alexarchambault.millnativeimage.NativeImage
@@ -29,7 +29,7 @@ object Versions {
   def munitVersion            = "1.1.1"
   def osLibVersion            = "0.11.5"
   def pprintVersion           = "0.9.3"
-  def coursierVersion         = "2.1.24"
+  def coursierVersion         = "2.1.25-M19"
   def scoptVersion            = "4.1.0"
   def ubuntuVersion           = "24.04"
 }
