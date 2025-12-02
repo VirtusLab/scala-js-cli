@@ -21,7 +21,7 @@ import com.goyeau.mill.scalafix.ScalafixModule
 import com.lumidion.sonatype.central.client.core.{PublishingType, SonatypeCredentials}
 
 object Versions {
-  def scala213                = "2.13.16"
+  def scala213                = "2.13.18"
   def scalaJsVersion          = "1.20.1"
   def jsoniterVersion         = "2.37.10"
   def scalaJsImportMapVersion = "0.1.1"
