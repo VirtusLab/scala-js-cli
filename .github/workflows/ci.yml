@@ -49,9 +49,9 @@ jobs:
       - uses: VirtusLab/scala-cli-setup@v1
         with:
           jvm: "temurin:17"
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: '22'
+          node-version: 24
       - name: Test CLI
         run: ./mill -i 'tests.test'
 
@@ -98,9 +98,9 @@ jobs:
       - uses: coursier/setup-action@v1
         with:
           jvm: temurin:17
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: '22'
+          node-version: 24
       - run: |
           ./mill -i native.writeNativeImageScript --scriptDest generate.sh --imageDest "" && \
           ./generate.sh && \
@@ -142,9 +142,9 @@ jobs:
       - uses: coursier/setup-action@v1
         with:
           jvm: temurin:17
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: '22'
+          node-version: 24
       - run: |
           ./mill -i native-static.writeNativeImageScript --scriptDest generate.sh --imageDest "" && \
           ./generate.sh && \
@@ -178,9 +178,9 @@ jobs:
       - uses: coursier/setup-action@v1
         with:
           jvm: temurin:17
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: '22'
+          node-version: 24
       - run: | # TODO get rid of --no-filesystem-checker
           ./mill -i native-mostly-static.writeNativeImageScript --scriptDest generate.sh --imageDest "" && \
           ./generate.sh && \
