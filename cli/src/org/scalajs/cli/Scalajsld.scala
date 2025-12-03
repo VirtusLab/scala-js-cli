@@ -277,7 +277,12 @@ object Scalajsld {
         val allValidations = Seq(outputCheck, importMapCheck)
         allValidations.forall(_.isRight) match {
           case true  => success
-          case false => failure(allValidations.filter(_.isLeft).map(_.left.get).mkString("\n\n"))
+          case false => failure {
+              allValidations.flatMap {
+                case Left(v) => Some(v)
+                case _       => None
+              }.mkString("\n\n")
+            }
         }
       }
 
