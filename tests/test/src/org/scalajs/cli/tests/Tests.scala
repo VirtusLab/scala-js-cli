@@ -253,7 +253,7 @@ class Tests extends munit.FunSuite {
       "foo.scala"
     ).call(cwd = dir, stdin = os.Inherit, stdout = os.Inherit)
 
-    val res = os
+    os
       .proc(
         launcher,
         "--stdlib",
@@ -307,7 +307,7 @@ class Tests extends munit.FunSuite {
       "foo.scala"
     ).call(cwd = dir, stdin = os.Inherit, stdout = os.Inherit)
 
-    val res = os
+    os
       .proc(
         launcher,
         "--stdlib",
@@ -476,9 +476,9 @@ class Tests extends munit.FunSuite {
     val substTo   = "https://cdn.jsdelivr.net/gh/stdlib-js/array-base-linspace@esm/index.mjs"
     os.write(importmap, s"""{ "imports": {"@stdlib/linspace":"$substTo"}}""")
 
-    val out = os.makeDir.all(dir / "out")
+    os.makeDir.all(dir / "out")
 
-    val worky = os.proc(
+    os.proc(
       launcher,
       "--stdlib",
       scalaJsLibraryCp,
@@ -537,7 +537,7 @@ class Tests extends munit.FunSuite {
     ).call(cwd = dir, stdin = os.Inherit, stdout = os.Inherit)
 
     os.makeDir.all(dir / "out")
-    val res = os
+    os
       .proc(
         launcher,
         "--stdlib",
