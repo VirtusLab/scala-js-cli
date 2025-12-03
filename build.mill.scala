@@ -111,6 +111,7 @@ trait Cli extends ScalaJsCliModule with ScalaJsCliPublishModule {
 }
 
 trait ScalaJsCliNativeImage extends ScalaJsCliModule with NativeImage {
+  override def generateNativeImageWithFileSystemChecker: Boolean = false
 
   def nativeImageClassPath: T[Seq[PathRef]] = Task {
     runClasspath()

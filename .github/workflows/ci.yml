@@ -181,10 +181,10 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 24
-      - run: | # TODO get rid of --no-filesystem-checker
+      - run: |
           ./mill -i native-mostly-static.writeNativeImageScript --scriptDest generate.sh --imageDest "" && \
           ./generate.sh && \
-          ./mill -i --no-filesystem-checker tests.test.nativeStatic && \
+          ./mill -i tests.test.nativeStatic && \
           ./mill -i native-mostly-static.copyToArtifacts --directory artifacts/
       - uses: actions/upload-artifact@v5
         with:
