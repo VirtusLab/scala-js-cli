@@ -67,7 +67,7 @@ object Scalajsp {
           readFromFile(fileName)
         }
 
-      displayFileContent(Await.result(vfile, Duration.Inf), options)
+      displayFileContent(Await.result(vfile, Duration.Inf))
     }
   }
 
@@ -77,7 +77,7 @@ object Scalajsp {
     println(s"Supports Scala.js IR versions up to $binaryEmitted")
   }
 
-  private def displayFileContent(vfile: IRFile, opts: Options): Unit = {
+  private def displayFileContent(vfile: IRFile): Unit = {
     val tree = Await.result(IRFileImpl.fromIRFile(vfile).tree, Duration.Inf)
     new IRTreePrinter(stdout).print(tree)
     stdout.write('\n')

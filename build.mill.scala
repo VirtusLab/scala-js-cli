@@ -35,7 +35,8 @@ object Versions {
 }
 
 trait ScalaJsCliModule extends ScalaModule with ScalafixModule {
-  override def scalacOptions: T[Seq[String]] = super.scalacOptions() ++ Seq("-Wunused")
+  override def scalacOptions: T[Seq[String]] =
+    super.scalacOptions() ++ Seq("-Wunused", "-deprecation")
 
   def scalaVersion: T[String] = Versions.scala213
 }
