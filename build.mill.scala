@@ -28,7 +28,7 @@ object Versions {
   def graalVmVersion          = "22.3.1"
   def munitVersion            = "1.2.1"
   def osLibVersion            = "0.11.7"
-  def pprintVersion           = "0.9.5"
+  def pprintVersion           = "0.9.6"
   def coursierVersion         = "2.1.25-M19"
   def scoptVersion            = "4.1.0"
   def ubuntuVersion           = "24.04"
