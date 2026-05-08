@@ -23,7 +23,7 @@ import com.lumidion.sonatype.central.client.core.{PublishingType, SonatypeCreden
 object Versions {
   def scala213                = "2.13.18"
   def scalaJsVersion          = "1.21.0"
-  def jsoniterVersion         = "2.38.9"
+  def jsoniterVersion         = "2.38.11"
   def scalaJsImportMapVersion = "0.1.1"
   def graalVmVersion          = "22.3.1"
   def munitVersion            = "1.3.0"
