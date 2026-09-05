@@ -21,7 +21,7 @@ import com.goyeau.mill.scalafix.ScalafixModule
 import mill.javalib.publish.{PublishingType, SonatypeCredentials}
 
 object Versions {
-  def scala3                  = "3.3.8"
+  def scala3                  = "3.9.0"
   def scalaJsVersion          = "1.22.0"
   def jsoniterVersion         = "2.40.1"
   def scalaJsImportMapVersion = "0.1.1"
