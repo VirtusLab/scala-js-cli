@@ -23,7 +23,7 @@ import mill.javalib.publish.{PublishingType, SonatypeCredentials}
 object Versions {
   def scala3                  = "3.3.8"
   def scalaJsVersion          = "1.22.0"
-  def jsoniterVersion         = "2.40.1"
+  def jsoniterVersion         = "2.41.0"
   def scalaJsImportMapVersion = "0.1.1"
   def graalVmVersion          = "22.3.1"
   def munitVersion            = "1.3.6"
