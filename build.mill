@@ -30,7 +30,7 @@ object Versions {
   def osLibVersion            = "0.11.8"
   def pprintVersion           = "0.9.6"
   def coursierVersion         = "2.1.25-M25"
-  def scoptVersion            = "4.1.0"
+  def scoptVersion            = "4.2.0"
   def ubuntuVersion           = "24.04"
 }
 
