@@ -47,7 +47,8 @@ object Scalajsld {
     logLevel: Level = Level.Info,
     importMap: Option[File] = None,
     longRunning: Boolean = false,
-    emitWasm: Boolean = false
+    emitWasm: Boolean = false,
+    useJSPI: Boolean = false
   )
 
   private def moduleInitializer(
@@ -238,6 +239,12 @@ object Scalajsld {
       opt[Unit]("emitWasm")
         .action((_, c) => c.copy(emitWasm = true))
         .text("If present, use the _experimental_ web assembly backend in the linker")
+      opt[Unit]("useJSPI")
+        .action((_, c) => c.copy(useJSPI = true))
+        .text(
+          "Use JavaScript Promise Integration (JSPI) in the WebAssembly backend, " +
+            "required to link js.async/js.await (requires --emitWasm)"
+        )
       opt[Unit]('d', "debug")
         .action((_, c) => c.copy(logLevel = Level.Debug))
         .text("Debug mode: Show full log")
@@ -275,7 +282,11 @@ object Scalajsld {
               success
         }
 
-        val allValidations = Seq(outputCheck, importMapCheck)
+        val useJSPICheck =
+          if (c.useJSPI && !c.emitWasm) failure("--useJSPI requires --emitWasm")
+          else success
+
+        val allValidations = Seq(outputCheck, importMapCheck, useJSPICheck)
         allValidations.forall(_.isRight) match {
           case true  => success
           case false => failure {
@@ -335,6 +346,7 @@ object Scalajsld {
         .withModuleSplitStyle(moduleSplitStyle)
         .withOutputPatterns(options.outputPatterns)
         .withESFeatures(esFeatures)
+        .withWasmFeatures(_.withUseJSPI(options.useJSPI))
         .withCheckIR(options.checkIR)
         .withOptimizer(!options.noOpt)
         .withParallel(true)

@@ -571,4 +571,79 @@ class Tests extends munit.FunSuite {
     )
 
   }
+
+  private val jspiSource =
+    """import scala.scalajs.js
+      |
+      |object Foo {
+      |  def main(args: Array[String]): Unit = {
+      |    js.async {
+      |      val x = js.await(js.Promise.resolve[Int](21))
+      |      println(s"JSPI ${x * 2}")
+      |    }
+      |  }
+      |}
+      |""".stripMargin
+
+  /** Compiles `jspiSource` and links it for WebAssembly with `extraLinkerArgs`. */
+  private def linkJspiSource(dir: os.Path, extraLinkerArgs: String*): os.CommandResult = {
+    os.write(dir / "foo.scala", jspiSource)
+    val scalaJsLibraryCp = getScalaJsLibraryCp(dir)
+    os.makeDir.all(dir / "bin")
+    os.proc(
+      "cs",
+      "launch",
+      "scalac:2.13.16",
+      "--",
+      "-classpath",
+      scalaJsLibraryCp,
+      s"-Xplugin:${getScalaJsCompilerPlugin(dir)}",
+      "-d",
+      "bin",
+      "foo.scala"
+    ).call(cwd = dir, stdin = os.Inherit, stdout = os.Inherit)
+    os.makeDir.all(dir / "out")
+    os.proc(
+      launcher,
+      "--stdlib",
+      scalaJsLibraryCp,
+      "-s",
+      "--emitWasm",
+      extraLinkerArgs,
+      "--moduleKind",
+      "ESModule",
+      "--outputDir",
+      "out",
+      "-mm",
+      "Foo.main",
+      "bin"
+    ).call(cwd = dir, mergeErrIntoOut = true, check = false)
+  }
+
+  test("wasm with --useJSPI links and runs js.async/js.await") {
+    val dir  = os.temp.dir()
+    val link = linkJspiSource(dir, "--useJSPI")
+    assert(link.exitCode == 0, link.out.text())
+    val res = os.proc(
+      "node",
+      "--experimental-wasm-exnref",
+      "--experimental-wasm-jspi",
+      "main.js"
+    ).call(cwd = dir / "out", mergeErrIntoOut = true)
+    assertEquals(res.out.trim(), "JSPI 42")
+  }
+
+  test("wasm without --useJSPI cannot link js.async") {
+    val dir  = os.temp.dir()
+    val link = linkJspiSource(dir)
+    assert(link.exitCode != 0)
+    assert(link.out.text().contains("without JSPI support"), link.out.text())
+  }
+
+  test("--useJSPI requires --emitWasm") {
+    val res = os.proc(launcher, "--useJSPI", "--outputDir", "out", "bin")
+      .call(cwd = os.temp.dir(), mergeErrIntoOut = true, check = false)
+    // scalajsld exits 0 on option validation errors (scopt only prints them), so check the message
+    assert(res.out.text().contains("--useJSPI requires --emitWasm"), res.out.text())
+  }
 }
