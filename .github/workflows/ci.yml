@@ -109,6 +109,8 @@ jobs:
           ./mill -i "native.copyToArtifacts" --directory artifacts/
         if: runner.os != 'Windows'
       - run: |
+          @call ./mill.bat -i ci.copyJvm --dest jvm
+          @set "GRAALVM_HOME=%CD%\jvm"
           @call ./mill.bat -i native.writeNativeImageScript --scriptDest generate.bat --imageDest ""
           @call generate.bat
           @call ./mill.bat -i tests.test.native

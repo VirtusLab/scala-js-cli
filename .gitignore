@@ -7,3 +7,4 @@ out/
 .scala-build
 .cursor
 generate.sh
+/jvm/
