@@ -1,0 +1,44 @@
+package build.project.deps
+
+import mill.*
+import scalalib.*
+
+object Versions {
+  def scala3                  = "3.9.0"
+  def scalaJsVersion          = "1.22.0"
+  def jsoniterVersion         = "2.43.0"
+  def scalaJsImportMapVersion = "0.1.1"
+  def graalVmJavaVersion      = 17
+  def graalVmCommunityVersion = s"$graalVmJavaVersion.0.9"
+  def graalVmJvmId            = s"graalvm-community:$graalVmCommunityVersion"
+  def graalSvmVersion         = "22.3.1"
+  def munitVersion            = "1.3.6"
+  def osLibVersion            = "0.11.10"
+  def pprintVersion           = "0.9.6"
+  def coursierVersion         = "2.1.26"
+  def scoptVersion            = "4.2.0"
+  def ubuntuVersion           = "24.04"
+}
+
+object Deps {
+  // Used by the meta-build (mill-build/build.mill): Mill itself ships the Scala 2.13 coursier artifacts
+  def coursierLauncher = mvn"io.get-coursier:coursier-launcher_2.13:${Versions.coursierVersion}"
+  def jsoniterCore     =
+    mvn"com.github.plokhotnyuk.jsoniter-scala::jsoniter-scala-core:${Versions.jsoniterVersion}"
+  def jsoniterMacros =
+    mvn"com.github.plokhotnyuk.jsoniter-scala::jsoniter-scala-macros:${Versions.jsoniterVersion}"
+  // Mill plugin, used by the meta-build (mill-build/build.mill)
+  def millScalafix     = mvn"com.goyeau::mill-scalafix::0.6.0"
+  def munit            = mvn"org.scalameta::munit:${Versions.munitVersion}"
+  def osLib            = mvn"com.lihaoyi::os-lib:${Versions.osLibVersion}"
+  def pprint           = mvn"com.lihaoyi::pprint:${Versions.pprintVersion}"
+  def scalaJsImportMap =
+    mvn"com.armanbilge::scalajs-importmap:${Versions.scalaJsImportMapVersion}"
+  def scalaJsLinker                 = mvn"org.scala-js::scalajs-linker:${Versions.scalaJsVersion}"
+  def scopt                         = mvn"com.github.scopt::scopt:${Versions.scoptVersion}"
+  def sonatypeCentralClientRequests =
+    mvn"com.lumidion::sonatype-central-client-requests:0.6.0"
+  def sttpClient4 = mvn"com.softwaremill.sttp.client4::core:4.0.27"
+  def svm         = mvn"org.graalvm.nativeimage:svm:${Versions.graalSvmVersion}"
+  def ujson       = mvn"com.lihaoyi::ujson:4.4.3"
+}
