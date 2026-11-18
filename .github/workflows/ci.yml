@@ -187,7 +187,7 @@ jobs:
       - run: |
           ./mill -i native-mostly-static.writeNativeImageScript --scriptDest generate.sh --imageDest "" && \
           ./generate.sh && \
-          ./mill -i tests.test.nativeStatic && \
+          ./mill -i tests.test.nativeMostlyStatic && \
           ./mill -i native-mostly-static.copyToArtifacts --directory artifacts/
       - uses: actions/upload-artifact@v5
         with:

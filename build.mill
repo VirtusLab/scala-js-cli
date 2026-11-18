@@ -158,7 +158,7 @@ trait ScalaJsCliStaticNativeImage extends ScalaJsCliNativeImage {
       NativeImage.linuxStaticParams(
         dockerImage = "scala-cli-base-musl:latest",
         csUrl =
-          s"https://github.com/coursier/coursier/releases/download/v$csVersion/cs-x86_64-pc-linux.gz"
+          s"https://github.com/coursier/coursier/releases/download/v$csVersion/cs-x86_64-pc-linux-static.gz"
       )
     )
   }
