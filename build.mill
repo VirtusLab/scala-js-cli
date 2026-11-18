@@ -1,11 +1,6 @@
-//| mvnDeps:
-//| - io.github.alexarchambault.mill::mill-native-image::0.2.6
-//| - io.github.alexarchambault.mill::mill-native-image-upload:0.2.6
-//| - com.goyeau::mill-scalafix::0.6.0
-//| - com.lumidion::sonatype-central-client-requests:0.6.0
-//| - io.get-coursier:coursier-launcher_2.13:2.1.25-M25
 package build
 
+import build.project.deps.{Deps, Versions}
 import io.github.alexarchambault.millnativeimage.NativeImage
 import io.github.alexarchambault.millnativeimage.upload.Upload
 import mill.*
@@ -20,23 +15,6 @@ import scala.util.Properties.isWin
 import com.goyeau.mill.scalafix.ScalafixModule
 import mill.javalib.publish.{PublishingType, SonatypeCredentials}
 
-object Versions {
-  def scala3                  = "3.9.0"
-  def scalaJsVersion          = "1.22.0"
-  def jsoniterVersion         = "2.43.0"
-  def scalaJsImportMapVersion = "0.1.1"
-  def graalVmJavaVersion      = 17
-  def graalVmCommunityVersion = s"$graalVmJavaVersion.0.9"
-  def graalVmJvmId            = s"graalvm-community:$graalVmCommunityVersion"
-  def graalSvmVersion         = "22.3.1"
-  def munitVersion            = "1.3.6"
-  def osLibVersion            = "0.11.10"
-  def pprintVersion           = "0.9.6"
-  def coursierVersion         = "2.1.25-M25"
-  def scoptVersion            = "4.2.0"
-  def ubuntuVersion           = "24.04"
-}
-
 trait ScalaJsCliModule extends ScalaModule with ScalafixModule {
   override def scalacOptions: T[Seq[String]] =
     super.scalacOptions() ++ Seq("-Wunused:all", "-deprecation")
@@ -50,12 +28,12 @@ trait Cli extends ScalaJsCliModule with ScalaJsCliPublishModule {
   def artifactName: T[String] = "scalajs" + super.artifactName()
 
   def mvnDeps: T[Seq[Dep]] = super.mvnDeps() ++ Seq(
-    mvn"org.scala-js::scalajs-linker:${Versions.scalaJsVersion}".withDottyCompat(scalaVersion()),
-    mvn"com.github.scopt::scopt:${Versions.scoptVersion}",
-    mvn"com.lihaoyi::os-lib:${Versions.osLibVersion}",
-    mvn"com.github.plokhotnyuk.jsoniter-scala::jsoniter-scala-core:${Versions.jsoniterVersion}", // This is the java8 version of jsoniter, according to scala-cli build
-    mvn"com.github.plokhotnyuk.jsoniter-scala::jsoniter-scala-macros:${Versions.jsoniterVersion}", // This is the java8 version of jsoniter, according to scala-cli build
-    mvn"com.armanbilge::scalajs-importmap:${Versions.scalaJsImportMapVersion}".withDottyCompat(
+    Deps.scalaJsLinker.withDottyCompat(scalaVersion()),
+    Deps.scopt,
+    Deps.osLib,
+    Deps.jsoniterCore,   // This is the java8 version of jsoniter, according to scala-cli build
+    Deps.jsoniterMacros, // This is the java8 version of jsoniter, according to scala-cli build
+    Deps.scalaJsImportMap.withDottyCompat(
       scalaVersion()
     )
   )
@@ -141,7 +119,7 @@ trait ScalaJsCliNativeImage extends ScalaJsCliModule with NativeImage {
   def moduleDeps: Seq[JavaModule] = Seq(cli)
 
   def compileMvnDeps: T[Seq[Dep]] =
-    super.compileMvnDeps() ++ Seq(mvn"org.graalvm.nativeimage:svm:${Versions.graalSvmVersion}")
+    super.compileMvnDeps() ++ Seq(Deps.svm)
 
   def nativeImageMainClass: T[String] = "org.scalajs.cli.Scalajsld"
 
@@ -215,9 +193,9 @@ object tests extends ScalaJsCliModule {
   @unused
   object test extends ScalaTests with TestModule.Munit {
     def mvnDeps: T[Seq[Dep]] = super.mvnDeps() ++ Seq(
-      mvn"org.scalameta::munit:${Versions.munitVersion}",
-      mvn"com.lihaoyi::os-lib:${Versions.osLibVersion}",
-      mvn"com.lihaoyi::pprint:${Versions.pprintVersion}"
+      Deps.munit,
+      Deps.osLib,
+      Deps.pprint
     )
 
     override def testForked(args: String*): Command[(msg: String, results: Seq[TestResult])] =
