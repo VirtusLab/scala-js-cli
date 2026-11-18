@@ -50,7 +50,7 @@ trait Cli extends ScalaJsCliModule with ScalaJsCliPublishModule {
   }
 
   def standaloneLauncher: T[PathRef] = Task {
-    val cachePath = os.Path(coursier.cache.FileCache().location, BuildCtx.workspaceRoot)
+    val cachePath = os.Path(coursier.cache.CacheDefaults.location, BuildCtx.workspaceRoot)
 
     def urlOf(path: os.Path): Option[String] =
       if path.startsWith(cachePath) then {
@@ -85,8 +85,7 @@ trait Cli extends ScalaJsCliModule with ScalaJsCliPublishModule {
     }
     val loaderContent = coursier.launcher.ClassLoaderContent(entries)
     val params        = Parameters.Bootstrap(Seq(loaderContent), mainClass0)
-      .withDeterministic(true)
-      .withPreamble(preamble)
+      .copy(deterministic = true, preambleOpt = Some(preamble))
 
     BootstrapGenerator.generate(params, dest.toNIO)
 
