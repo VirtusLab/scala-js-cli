@@ -7,6 +7,13 @@ on:
       - "v*"
   pull_request:
 
+env:
+  # Corretto, as it's the distribution with fixes for the recent JDK vulnerabilities on all the
+  # platforms we use. Mill and the tests run on a JVM 17 installed on the machine too
+  # (see mill-jvm-version in build.mill).
+  # CVE-2026-91403 (compromised CAs): https://www.scala-lang.org/blog/jdk-certificate-vulnerability.html
+  JVM: "corretto:17.0.21.0.11"
+
 jobs:
   format:
     timeout-minutes: 15
@@ -17,6 +24,8 @@ jobs:
           fetch-depth: 0
           submodules: true
       - uses: VirtusLab/scala-cli-setup@v1
+        with:
+          jvm: ${{ env.JVM }}
       - run: scala-cli fmt . --check
       - run: ./mill -i mill.scalalib.scalafmt/checkFormatAll
 
@@ -31,7 +40,7 @@ jobs:
       - uses: coursier/cache-action@v7
       - uses: coursier/setup-action@v1
         with:
-          jvm: temurin:17
+          jvm: ${{ env.JVM }}
       - name: Run scalafix
         run: ./mill -i __.fix --check
 
@@ -49,7 +58,7 @@ jobs:
           submodules: true
       - uses: VirtusLab/scala-cli-setup@v1
         with:
-          jvm: "temurin:17"
+          jvm: ${{ env.JVM }}
       - uses: actions/setup-node@v6
         with:
           node-version: 24
@@ -70,7 +79,7 @@ jobs:
           submodules: true
       - uses: VirtusLab/scala-cli-setup@v1
         with:
-          jvm: "temurin:17"
+          jvm: ${{ env.JVM }}
       - run: .github/scripts/gpg-setup.sh
         env:
           PGP_SECRET: ${{ secrets.PUBLISH_SECRET_KEY }}
@@ -98,7 +107,7 @@ jobs:
       - uses: coursier/cache-action@v7
       - uses: coursier/setup-action@v1
         with:
-          jvm: temurin:17
+          jvm: ${{ env.JVM }}
       - uses: actions/setup-node@v6
         with:
           node-version: 24
@@ -144,7 +153,7 @@ jobs:
       - uses: coursier/cache-action@v7
       - uses: coursier/setup-action@v1
         with:
-          jvm: temurin:17
+          jvm: ${{ env.JVM }}
       - uses: actions/setup-node@v6
         with:
           node-version: 24
@@ -180,7 +189,7 @@ jobs:
       - uses: coursier/cache-action@v7
       - uses: coursier/setup-action@v1
         with:
-          jvm: temurin:17
+          jvm: ${{ env.JVM }}
       - uses: actions/setup-node@v6
         with:
           node-version: 24

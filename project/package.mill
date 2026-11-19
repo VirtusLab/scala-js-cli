@@ -1,1 +1,40 @@
 package build.project
+
+import java.security.KeyStore
+import java.security.cert.X509Certificate
+
+import scala.jdk.CollectionConverters.*
+
+/** Writes a copy of the `source` trust store to `dest`, without the compromised eMudhra / AAA CAs
+  * (CVE-2026-91403), mirroring
+  * https://github.com/eed3si9n/emudhra-emsign-check/blob/main/bin/distrust-emudhra.sh
+  *
+  * See https://www.scala-lang.org/blog/jdk-certificate-vulnerability.html
+  *
+  * @return
+  *   the subjects of the removed certificates
+  */
+def writeTrustStoreWithoutCompromisedCas(source: os.Path, dest: os.Path): Seq[String] = {
+  val password                       = "changeit".toCharArray
+  val store                          = KeyStore.getInstance(source.toIO, password)
+  def subject(alias: String): String =
+    store.getCertificate(alias) match {
+      case cert: X509Certificate => cert.getSubjectX500Principal.getName
+      case _                     => ""
+    }
+  val subjects = store.aliases().asScala.toSeq.map(alias => alias -> subject(alias))
+  // the AAA root is shared with legitimate Sectigo chains, which can still be validated via USERTrust
+  val hasUserTrust = subjects.exists(_._2.contains("CN=USERTrust RSA Certification Authority"))
+  val toRemove     = subjects.filter { (_, subject) =>
+    subject.contains("emSign") || subject.contains("CN=AAA Certificate Services")
+  }
+  if toRemove.exists(_._2.contains("CN=AAA Certificate Services")) && !hasUserTrust then
+    sys.error(
+      s"No USERTrust root in $source, can't remove the AAA Certificate Services root safely"
+    )
+  for (alias, _) <- toRemove do store.deleteEntry(alias)
+  val out = os.write.over.outputStream(dest, createFolders = true)
+  try store.store(out, password)
+  finally out.close()
+  toRemove.map(_._2)
+}

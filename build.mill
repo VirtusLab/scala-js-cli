@@ -1,6 +1,8 @@
+//| mill-jvm-version: system|17
 package build
 
 import build.project.deps.{Deps, Versions}
+import build.project.writeTrustStoreWithoutCompromisedCas
 import io.github.alexarchambault.millnativeimage.NativeImage
 import io.github.alexarchambault.millnativeimage.upload.Upload
 import mill.*
@@ -93,7 +95,10 @@ trait Cli extends ScalaJsCliModule with ScalaJsCliPublishModule {
   }
 }
 
-trait ScalaJsCliNativeImage extends ScalaJsCliModule with NativeImage {
+/** Settings shared by all the native images: the scala-js-cli launchers, and the test-only security
+  * probe
+  */
+trait ScalaJsCliNativeImageBase extends ScalaJsCliModule with NativeImage {
   override def generateNativeImageWithFileSystemChecker: Boolean = false
 
   def nativeImageClassPath: T[Seq[PathRef]] = Task {
@@ -101,17 +106,49 @@ trait ScalaJsCliNativeImage extends ScalaJsCliModule with NativeImage {
   }
 
   def nativeImageOptions: T[Seq[String]] = Task {
+    // native images embed the trust store used at build time
+    val trustStorePath =
+      if nativeImageDockerParams().nonEmpty then s"/data/$trustStoreDirName/$trustStoreFileName"
+      else (nativeImageTrustStoreDir().path / trustStoreFileName).toString
     super.nativeImageOptions() ++ Seq(
       "--no-fallback",
-      "-H:IncludeResources=org/scalajs/linker/backend/emitter/.*.sjsir",
-      "-H:IncludeResources=com/google/javascript/jscomp/js/polyfills.txt",
-      "-H:IncludeResourceBundles=com.google.javascript.jscomp.parsing.ParserConfig"
+      s"-J-Djavax.net.ssl.trustStore=$trustStorePath",
+      "-J-Djavax.net.ssl.trustStorePassword=changeit"
     )
+  }
+
+  private def trustStoreDirName  = "trust-store"
+  private def trustStoreFileName = "cacerts"
+
+  /** The GraalVM version in use still trusts compromised CAs (CVE-2026-91403), so a trust store
+    * without them is passed to native-image
+    */
+  def nativeImageTrustStoreDir: T[PathRef] = Task {
+    BuildCtx.withFilesystemCheckerDisabled {
+      // inside nativeImageDockerWorkingDir, so that it's mounted under /data in docker builds
+      val dir     = nativeImageDockerWorkingDir() / trustStoreDirName
+      val source  = nativeImageGraalvmHome().path / "lib" / "security" / "cacerts"
+      val removed = writeTrustStoreWithoutCompromisedCas(source, dir / trustStoreFileName)
+      System.err.println(
+        s"Removed from the native image trust store:${removed.map("\n  " + _).mkString}"
+      )
+      PathRef(dir)
+    }
   }
 
   def nativeImagePersist: Boolean = System.getenv("CI") != null
 
   def nativeImageGraalVmJvmId: T[String] = Versions.graalVmJvmId
+}
+
+trait ScalaJsCliNativeImage extends ScalaJsCliNativeImageBase {
+  def nativeImageOptions: T[Seq[String]] = Task {
+    super.nativeImageOptions() ++ Seq(
+      "-H:IncludeResources=org/scalajs/linker/backend/emitter/.*.sjsir",
+      "-H:IncludeResources=com/google/javascript/jscomp/js/polyfills.txt",
+      "-H:IncludeResourceBundles=com.google.javascript.jscomp.parsing.ParserConfig"
+    )
+  }
 
   def nativeImageName: T[String] = "scala-js-ld"
 
@@ -186,11 +223,27 @@ trait ScalaJsCliMostlyStaticNativeImage extends ScalaJsCliNativeImage {
 
 object `native-mostly-static` extends ScalaJsCliMostlyStaticNativeImage
 
+/** Test-only probe checking the JDK security fixes, on other JVMs than the one running the tests,
+  * and as a native image built like the launchers (see `CompromisedCaTests`). Not published.
+  */
+object `security-probe` extends ScalaJsCliNativeImageBase {
+  def nativeImageOptions: T[Seq[String]] = Task {
+    super.nativeImageOptions() ++ Seq("--enable-url-protocols=https")
+  }
+  def mainClass: T[Option[String]]    = Some("org.scalajs.cli.securityprobe.SecurityProbe")
+  def nativeImageMainClass: T[String] = mainClass().get
+  def nativeImageName: T[String]      = "security-probe"
+}
+
+def securityProbe: `security-probe`.type = `security-probe`
+
 @unused
 object tests extends ScalaJsCliModule {
 
   @unused
   object test extends ScalaTests with TestModule.Munit {
+    def moduleDeps: Seq[JavaModule] = super.moduleDeps ++ Seq(securityProbe)
+
     def mvnDeps: T[Seq[Dep]] = super.mvnDeps() ++ Seq(
       Deps.munit,
       Deps.osLib,
@@ -200,15 +253,27 @@ object tests extends ScalaJsCliModule {
     override def testForked(args: String*): Command[(msg: String, results: Seq[TestResult])] =
       jvm(args*)
 
-    private def testExtraArgs(launcher: os.Path): Seq[String] = Seq(
+    private def testExtraArgs(
+      launcher: os.Path,
+      nativeLauncher: Boolean,
+      securityProbeClassPath: Seq[PathRef],
+      securityProbeNative: Option[PathRef] = None
+    ): Seq[String] = Seq(
       s"-Dtest.scala-js-cli.path=$launcher",
-      s"-Dtest.scala-js-cli.scala-js-version=${Versions.scalaJsVersion}"
-    )
+      s"-Dtest.scala-js-cli.native=$nativeLauncher",
+      s"-Dtest.scala-js-cli.scala-js-version=${Versions.scalaJsVersion}",
+      "-Dtest.security-probe.classpath=" +
+        securityProbeClassPath.map(_.path.toString).mkString(java.io.File.pathSeparator)
+    ) ++ securityProbeNative.map(p => s"-Dtest.security-probe.native-path=${p.path}")
 
     @unused
     def jvm(args: String*): Command[(msg: String, results: Seq[TestResult])] = Task.Command {
       testTask(
-        args = Task.Anon(args ++ testExtraArgs(cli.standaloneLauncher().path)),
+        args = Task.Anon(args ++ testExtraArgs(
+          cli.standaloneLauncher().path,
+          nativeLauncher = false,
+          securityProbe.runClasspath()
+        )),
         globSelectors = Task.Anon(Seq.empty[String])
       )()
     }
@@ -216,7 +281,12 @@ object tests extends ScalaJsCliModule {
     @unused
     def native(args: String*): Command[(msg: String, results: Seq[TestResult])] = Task.Command {
       testTask(
-        args = Task.Anon(args ++ testExtraArgs(native0.nativeImage().path)),
+        args = Task.Anon(args ++ testExtraArgs(
+          native0.nativeImage().path,
+          nativeLauncher = true,
+          securityProbe.runClasspath(),
+          Some(securityProbe.nativeImage())
+        )),
         globSelectors = Task.Anon(Seq.empty[String])
       )()
     }
@@ -225,7 +295,11 @@ object tests extends ScalaJsCliModule {
     def nativeStatic(args: String*): Command[(msg: String, results: Seq[TestResult])] =
       Task.Command {
         testTask(
-          args = Task.Anon(args ++ testExtraArgs(`native-static`.nativeImage().path)),
+          args = Task.Anon(args ++ testExtraArgs(
+            `native-static`.nativeImage().path,
+            nativeLauncher = true,
+            securityProbe.runClasspath()
+          )),
           globSelectors = Task.Anon(Seq.empty[String])
         )()
       }
@@ -234,7 +308,11 @@ object tests extends ScalaJsCliModule {
     def nativeMostlyStatic(args: String*): Command[(msg: String, results: Seq[TestResult])] =
       Task.Command {
         testTask(
-          args = Task.Anon(args ++ testExtraArgs(`native-mostly-static`.nativeImage().path)),
+          args = Task.Anon(args ++ testExtraArgs(
+            `native-mostly-static`.nativeImage().path,
+            nativeLauncher = true,
+            securityProbe.runClasspath()
+          )),
           globSelectors = Task.Anon(Seq.empty[String])
         )()
       }
