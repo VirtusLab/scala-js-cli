@@ -22,21 +22,6 @@ git clone --recurse-submodules https://github.com/VirtusLab/scala-js-cli.git
 git submodule update --init
 ```
 
-## JVM
-
-Mill (and the tests it runs) runs on a JVM 17 already installed on the machine, rather than one it downloads
-itself (`mill-jvm-version: system|17`, in the header of `build.mill`). Make sure a JDK 17 with the fixes for
-the recent JDK vulnerabilities is installed, such as the Corretto version the CI uses (see
-`.github/workflows/ci.yml`):
-
-```bash
-eval "$(cs java --jvm corretto:17.0.21.0.11 --env)"
-```
-
-`CompromisedCaTests` checks that the compromised CAs of
-[CVE-2026-91403](https://www.scala-lang.org/blog/jdk-certificate-vulnerability.html) aren't trusted by those
-JVMs, nor by the native launchers.
-
 ## Mill plugins built from source
 
 The [mill-native-image](https://github.com/alexarchambault/mill-native-image) Mill plugin (and its

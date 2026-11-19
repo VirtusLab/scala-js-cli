@@ -10,8 +10,10 @@ object SecurityProbe {
     args.toList match {
       case "tls" :: urls =>
         for url <- urls do println(s"$url\t${TlsCheck.check(url).render}")
+      case "java4shell" :: Nil =>
+        println(Java4ShellCheck.current().render)
       case _ =>
-        System.err.println("Usage: security-probe tls <url>...")
+        System.err.println("Usage: security-probe tls <url>... | security-probe java4shell")
         sys.exit(1)
     }
 }

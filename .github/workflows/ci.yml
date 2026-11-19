@@ -8,11 +8,7 @@ on:
   pull_request:
 
 env:
-  # Corretto, as it's the distribution with fixes for the recent JDK vulnerabilities on all the
-  # platforms we use. Mill and the tests run on a JVM 17 installed on the machine too
-  # (see mill-jvm-version in build.mill).
-  # CVE-2026-91403 (compromised CAs): https://www.scala-lang.org/blog/jdk-certificate-vulnerability.html
-  JVM: "corretto:17.0.21.0.11"
+  JVM: "corretto:17"
 
 jobs:
   format:
