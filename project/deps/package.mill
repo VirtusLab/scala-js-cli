@@ -5,7 +5,7 @@ import scalalib.*
 
 object Versions {
   def scala3                  = "3.9.0"
-  def scalaJsVersion          = "1.22.0"
+  def scalaJsVersion          = "1.23.0"
   def jsoniterVersion         = "2.43.0"
   def scalaJsImportMapVersion = "0.1.1"
   def graalVmJavaVersion      = 17
