@@ -8,7 +8,7 @@ on:
   pull_request:
 
 env:
-  JVM: "corretto:17"
+  JVM: "corretto:25"
 
 jobs:
   format:
