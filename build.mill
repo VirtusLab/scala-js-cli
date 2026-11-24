@@ -1,4 +1,4 @@
-//| mill-jvm-version: system|17
+//| mill-jvm-version: system|25
 package build
 
 import build.project.deps.{Deps, Versions}
@@ -18,8 +18,15 @@ import com.goyeau.mill.scalafix.ScalafixModule
 import mill.javalib.publish.{PublishingType, SonatypeCredentials}
 
 trait ScalaJsCliModule extends ScalaModule with ScalafixModule {
+  // the build runs on a newer JDK, but the artifacts should stay usable on older ones
   override def scalacOptions: T[Seq[String]] =
-    super.scalacOptions() ++ Seq("-Wunused:all", "-deprecation")
+    super.scalacOptions() ++ Seq(
+      "-Wunused:all",
+      "-deprecation",
+      s"-java-output-version:${Versions.javaOutputVersion}"
+    )
+  override def javacOptions: T[Seq[String]] =
+    super.javacOptions() ++ Seq("--release", Versions.javaOutputVersion.toString)
 
   def scalaVersion: T[String] = Versions.scala3
 }
@@ -111,7 +118,6 @@ trait ScalaJsCliNativeImageBase extends ScalaJsCliModule with NativeImage {
       if nativeImageDockerParams().nonEmpty then s"/data/$trustStoreDirName/$trustStoreFileName"
       else (nativeImageTrustStoreDir().path / trustStoreFileName).toString
     super.nativeImageOptions() ++ Seq(
-      "--no-fallback",
       s"-J-Djavax.net.ssl.trustStore=$trustStorePath",
       "-J-Djavax.net.ssl.trustStorePassword=changeit"
     )
@@ -141,15 +147,9 @@ trait ScalaJsCliNativeImageBase extends ScalaJsCliModule with NativeImage {
   def nativeImageGraalVmJvmId: T[String] = Versions.graalVmJvmId
 }
 
+// resources & resource bundles needed at run time are registered in
+// cli/resources/META-INF/native-image/org.virtuslab.scala-js-cli/scalajs-cli/reachability-metadata.json
 trait ScalaJsCliNativeImage extends ScalaJsCliNativeImageBase {
-  def nativeImageOptions: T[Seq[String]] = Task {
-    super.nativeImageOptions() ++ Seq(
-      "-H:IncludeResources=org/scalajs/linker/backend/emitter/.*.sjsir",
-      "-H:IncludeResources=com/google/javascript/jscomp/js/polyfills.txt",
-      "-H:IncludeResourceBundles=com.google.javascript.jscomp.parsing.ParserConfig"
-    )
-  }
-
   def nativeImageName: T[String] = "scala-js-ld"
 
   def moduleDeps: Seq[JavaModule] = Seq(cli)

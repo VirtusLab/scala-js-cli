@@ -1,0 +1,9 @@
+{
+  "resources": [
+    {"glob": "org/scalajs/linker/backend/emitter/*.sjsir"},
+    {"glob": "com/google/javascript/jscomp/js/polyfills.txt"}
+  ],
+  "bundles": [
+    {"name": "com.google.javascript.jscomp.parsing.ParserConfig"}
+  ]
+}
